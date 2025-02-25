@@ -1,0 +1,167 @@
+{
+    "metadata": {
+      "totalJobs": 553,
+      "scrapedAt": "2025-02-16T19:38:31.106Z",
+      "uniqueCompanies": 306,
+      "queries": [
+        "javascript developer",
+        "python developer",
+        "software engineer",
+        "frontend developer",
+        "backend developer",
+        "full stack developer"
+      ],
+      "averageTechPerJob": 2.1446654611211575
+    },
+    "techStats": [
+      {
+        "technology": "JavaScript",
+        "count": 188,
+        "percentage": 34
+      },
+      {
+        "technology": "Python",
+        "count": 159,
+        "percentage": 29
+      },
+      {
+        "combination": "JavaScript + MySQL",
+        "count": 18,
+        "percentage": 3
+      },
+      {
+        "combination": "MySQL + React",
+        "count": 18,
+        "percentage": 3
+      },
+      {
+        "combination": "C# + MySQL",
+        "count": 18,
+        "percentage": 3
+      },
+      {
+        "combination": "JavaScript + PHP",
+        "count": 17,
+        "percentage": 3
+      },
+      {
+        "combination": "AWS + TypeScript",
+        "count": 16,
+        "percentage": 3
+      },
+      {
+        "combination": "Python + React",
+        "count": 15,
+        "percentage": 3
+      },
+      {
+        "combination": "AWS + Node.js",
+        "count": 14,
+        "percentage": 3
+      }
+    ],
+    "jobs": [
+      {
+        "id": "5032154139",
+        "title": "JavaScript Developer",
+        "company": "CVBay",
+        "location": "Ardwick, Manchester",
+        "description": "We are seeking a talented Mid-Senior level JavaScript Developer to join our team and contribute to the development and delivery of high-quality web and mobile games. In this role, you will collaborate with cross-functional teams and play a key part in optimising the efficiency of game development processes. Key Responsibilities: Develop and maintain mobile and web-based games using JavaScript and Pixi.JS Collaborate with departments including art, design, project management, and testing to deliver exceptional gaming experiences.",
+        "url": "https://www.adzuna.co.uk/jobs/land/ad/5032154139",
+        "source": "adzuna",
+        "postedAt": "2025-02-01T05:14:32.000Z",
+        "techStack": [
+          "JavaScript"
+        ],
+        "salary": "£55000 - £55000",
+        "category": "IT Jobs",
+        "contract_type": "permanent",
+        "queryFound": "javascript developer"
+      },
+      {
+        "id": "5028511654",
+        "title": "PHP JavaScript Developer (Hybrid)",
+        "company": "Circle Group",
+        "location": "Manchester, Greater Manchester",
+        "description": "PHP JavaScript Developer (Hybrid) Keywords: PHP, JavaScript, Typescript, Angular, VUE Are you a skilled developer passionate about building powerful, user-friendly systems? My client is going through a large recruitment drive due to expansion and currently has a number of Development positions within the full stack team. About the Role You'll be working on exciting projects using JavaScript and TypeScript (Angular, with plans to transition to Vue.js) for frontend development, and PHP with the Laravel framework for backend development.",
+        "url": "https://www.adzuna.co.uk/jobs/land/ad/5028511654",
+        "source": "adzuna",
+        "postedAt": "2025-01-29T17:10:46.000Z",
+        "techStack": [
+          "Angular",
+          "JavaScript",
+          "PHP",
+          "TypeScript",
+          "Vue"
+        ],
+        "salary": "£50000 - £50000",
+        "category": "IT Jobs",
+        "contract_type": "permanent",
+        "queryFound": "javascript developer"
+      },
+      {
+        "id": "5035662204",
+        "title": "JavaScript Developer - Hybrid Remote",
+        "company": "Vertech Group Ltd",
+        "location": "North West London, London",
+        "description": "JavaScript Developer Location: 3 days from home / 2 days in London - Negotiable Salary: Circa 45K 60K Bonus Benefits JavaScript Developer required by fast-growing, Top Tech Company This is a diverse, challenging role in a talented team where you'll take ownership of a variety of platform development projects Essential: At least 2yrs experience Proficient in JavaScript, HTML5, CSS3 React or Angular Experience with Node.js Tremendous opportunity offering plenty of scope for career progression in a growing company.",
+        "url": "https://www.adzuna.co.uk/jobs/land/ad/5035662204",
+        "source": "adzuna",
+        "postedAt": "2025-02-03T21:42:19.000Z",
+        "techStack": [
+          "Angular",
+          "JavaScript",
+          "Node.js",
+          "React"
+        ],
+        "salary": "£45000 - £60000",
+        "category": "IT Jobs",
+        "contract_type": "permanent",
+        "queryFound": "javascript developer"
+      },
+      {
+        "id": "5037214211",
+        "title": "Python Developer",
+        "company": "Nigel Frank International",
+        "location": "London, UK",
+        "description": "Python Developer - Python, Django, Flask, AWS, JavaScript, TypeScript, React, Angular - London/Remote Are you a Python Developer looking for a new challenge? Do you want to work with the latest technologies and make an impact in a growing organization? My client is looking for skilled Python developers to join their team. They offer a competitive salary and benefits package, as well as the opportunity to work with a talented team on interesting projects. Key Responsibilities: Design, develop, and maintain Python applications Work with databases and APIs Collaborate with cross-functional teams.",
+        "url": "https://www.adzuna.co.uk/jobs/land/ad/5037214211",
+        "source": "adzuna",
+        "postedAt": "2025-02-05T08:12:45.000Z",
+        "techStack": [
+          "AWS",
+          "Angular",
+          "Django",
+          "Flask",
+          "JavaScript",
+          "Python",
+          "React",
+          "TypeScript"
+        ],
+        "salary": "£65000 - £85000",
+        "category": "IT Jobs",
+        "contract_type": "permanent",
+        "queryFound": "python developer"
+      },
+      {
+        "id": "5038721554",
+        "title": "Full Stack Developer",
+        "company": "TechVision Inc",
+        "location": "Manchester, UK",
+        "description": "We are seeking a Full Stack Developer to join our innovative team. In this role, you will be responsible for developing and maintaining both front-end and back-end components of our web applications. The ideal candidate should have a strong background in JavaScript, React, Node.js, and database technologies. You will collaborate with design and product teams to implement new features and optimize application performance.",
+        "url": "https://www.example.com/jobs/5038721554",
+        "source": "internal",
+        "postedAt": "2025-02-07T14:30:00.000Z",
+        "techStack": [
+          "JavaScript",
+          "React",
+          "Node.js",
+          "MongoDB"
+        ],
+        "salary": "£60000 - £75000",
+        "category": "IT Jobs",
+        "contract_type": "permanent",
+        "queryFound": "full stack developer"
+      }
+    ]
+  }
