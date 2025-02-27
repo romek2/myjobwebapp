@@ -1,11 +1,28 @@
 // lib/auth.ts
 import { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import  { prisma }  from "./prisma" // Make sure this path is correct
+import { prisma } from "./prisma"
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      subscriptionStatus?: string;
+    }
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    subscriptionStatus?: string;
+  }
+}
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),  // Add this line
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -13,19 +30,47 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: {
-    strategy: "database",  // Change from "jwt" to "database"
+    strategy: "jwt" // Use JWT for sessions
   },
   callbacks: {
-    async session({ session, user }) {  // Updated to use user from database
+    async jwt({ token, user, account, profile }) {
+      if (user) {
+        token.id = user.id
+      }
+      return token
+    },
+    async session({ session, token }) {
       if (session.user) {
-        session.user.id = user.id
+        session.user.id = token.id as string
+        
+        // Optionally fetch subscription status from DB
+        if (session.user.email) {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: session.user.email },
+            select: { subscriptionStatus: true }
+          });
+          if (dbUser) {
+            session.user.subscriptionStatus = dbUser.subscriptionStatus;
+          }
+        }
       }
       return session
     },
-    async redirect({ url, baseUrl }) {
-      if (url.startsWith(baseUrl)) return url
-      else if (url.startsWith("/")) return `${baseUrl}${url}`
-      return baseUrl
+    async signIn({ user, account, profile }) {
+      // Sync the user to the database
+      if (user.email) {
+        await prisma.user.upsert({
+          where: { email: user.email },
+          update: { name: user.name, image: user.image },
+          create: {
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            subscriptionStatus: "FREE"
+          }
+        });
+      }
+      return true
     }
   }
 }

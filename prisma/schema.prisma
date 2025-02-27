@@ -36,13 +36,21 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
+  id                 String    @id @default(cuid())
+  name               String?
+  email              String?   @unique
+  emailVerified      DateTime?
+  image              String?
+  accounts           Account[]
+  sessions           Session[]
+  // Stripe subscription fields - all optional or with defaults
+  stripeCustomerId   String?
+  stripePriceId      String?
+  stripeSubscriptionId String?
+  subscriptionStatus String    @default("FREE") 
+  subscriptionPeriodStart DateTime?
+  subscriptionPeriodEnd DateTime?
+  overrideAccess     Boolean   @default(false)
 }
 
 model VerificationToken {
@@ -58,7 +66,7 @@ model Job {
   title       String
   company     String
   location    String
-  description String   // Removed @db.Text
+  description String   
   url         String
   source      String
   postedAt    DateTime
