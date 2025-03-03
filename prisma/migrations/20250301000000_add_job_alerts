@@ -1,0 +1,40 @@
+-- CreateTable
+CREATE TABLE "JobAlert" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    "keywords" TEXT NOT NULL,
+    "frequency" TEXT NOT NULL,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "userId" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "JobAlert_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "PremiumJob" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "title" TEXT NOT NULL,
+    "company" TEXT NOT NULL,
+    "location" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+    "salary" TEXT,
+    "isPremium" BOOLEAN NOT NULL DEFAULT true,
+    "postedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "JobAlertHistory" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "alertId" TEXT NOT NULL,
+    "jobId" TEXT NOT NULL,
+    "sentAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "JobAlertHistory_alertId_fkey" FOREIGN KEY ("alertId") REFERENCES "JobAlert" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "JobAlertHistory_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "PremiumJob" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "JobAlertHistory_alertId_jobId_key" ON "JobAlertHistory"("alertId", "jobId");

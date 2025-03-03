@@ -43,6 +43,7 @@ model User {
   image              String?
   accounts           Account[]
   sessions           Session[]
+  jobAlerts          JobAlert[]
   // Stripe subscription fields - all optional or with defaults
   stripeCustomerId   String?
   stripePriceId      String?
@@ -104,4 +105,42 @@ model TechCombination {
   updatedAt   DateTime @updatedAt
 
   @@unique([tech1, tech2])
+}
+
+model JobAlert {
+  id          String   @id @default(cuid())
+  name        String
+  keywords    String
+  frequency   String   // "daily", "weekly", "realtime"
+  active      Boolean  @default(true)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  alertHistory JobAlertHistory[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PremiumJob {
+  id          String   @id @default(cuid())
+  title       String
+  company     String
+  location    String
+  description String
+  url         String
+  salary      String?
+  isPremium   Boolean  @default(true)
+  alertHistory JobAlertHistory[]
+  postedAt    DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model JobAlertHistory {
+  id          String   @id @default(cuid())
+  alert       JobAlert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  alertId     String
+  job         PremiumJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId       String
+  sentAt      DateTime @default(now())
+  @@unique([alertId, jobId])
 }
