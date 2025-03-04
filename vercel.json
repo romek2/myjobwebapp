@@ -1,19 +1,12 @@
 {
     "crons": [
       {
-        "path": "/api/alerts/process",
-        "schedule": "0 8 * * *",
-        "httpMethod": "POST",
-        "payload": { "frequency": "daily" }
+        "path": "/api/alerts/process?frequency=daily",
+        "schedule": "0 8 * * *"
       },
       {
-        "path": "/api/alerts/process",
-        "schedule": "0 8 * * 1",
-        "httpMethod": "POST",
-        "payload": { "frequency": "weekly" }
+        "path": "/api/alerts/process?frequency=weekly",
+        "schedule": "0 8 * * 1"
       }
-    ],
-    "buildCommand": "npm run build",
-    "installCommand": "npm install",
-    "outputDirectory": ".next"
+    ]
   }
