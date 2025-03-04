@@ -2,9 +2,10 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 
-export default function ProfilePage() {
+// Create a client component that uses useSearchParams
+function ProfileContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -15,7 +16,7 @@ export default function ProfilePage() {
   // Get checkout status from URL parameters
   const checkoutStatus = searchParams.get("checkout");
 
-  // Debug logs
+  // Debug logs and the rest of your component code...
   useEffect(() => {
     console.log("Profile component rendering, status:", status);
     console.log("Session data:", session);
@@ -179,5 +180,14 @@ export default function ProfilePage() {
         )}
       </div>
     </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-screen">Loading profile...</div>}>
+      <ProfileContent />
+    </Suspense>
   );
 }
