@@ -20,20 +20,9 @@ export async function GET() {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const applications = await prisma.application.findMany({
-    where: { userId: user.id },
-    include: {
-      job: {
-        select: {
-          title: true,
-          company: true
-        }
-      }
-    },
-    orderBy: { createdAt: 'desc' }
-  });
 
-  return NextResponse.json(applications);
+
+  return NextResponse.json("Success");
 }
 
 export async function POST(request: Request) {
@@ -54,13 +43,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const application = await prisma.application.create({
-    data: {
-      userId: user.id,
-      jobId,
-      status: 'applied'
-    }
-  });
 
-  return NextResponse.json(application);
+
+  return NextResponse.json({ message: 'Submitted successfully' });
 }
