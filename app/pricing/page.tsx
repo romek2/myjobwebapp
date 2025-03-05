@@ -80,7 +80,7 @@ export default function PricingPage() {
               </li>
               <li className="flex items-start">
                 <CheckIcon className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                <span>Save up to 5 jobs</span>
+                <span>Resume Upload</span>
               </li>
               <li className="flex items-start">
                 <CheckIcon className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
@@ -121,11 +121,11 @@ export default function PricingPage() {
               </li>
               <li className="flex items-start">
                 <CheckIcon className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
-                <span><strong>Unlimited</strong> saved jobs</span>
+                <span><strong>Customize job alerts</strong> to get notified right away</span>
               </li>
               <li className="flex items-start">
                 <CheckIcon className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
-                <span><strong>Application tracking</strong> to manage your job search</span>
+                <span><strong>Live Chat</strong> with professional recruiters</span>
               </li>
               <li className="flex items-start">
                 <CheckIcon className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
@@ -133,7 +133,7 @@ export default function PricingPage() {
               </li>
               <li className="flex items-start">
                 <CheckIcon className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
-                <span><strong>Priority support</strong> for all your questions</span>
+                <span><strong>Early Access</strong> to premium job posts</span>
               </li>
             </ul>
           </div>

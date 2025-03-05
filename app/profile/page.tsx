@@ -161,11 +161,12 @@ function ProfileContent() {
               <div>
                 <p className="mb-4">Upgrade to PRO to unlock all features:</p>
                 <ul className="list-disc ml-5 mb-4">
-                  <li>Resume analysis and editing</li>
-                  <li>Track job applications</li>
-                  <li>Advanced job search filters</li>
-                  <li>Unlimited saved jobs</li>
+                  <li>Resume analysis optimized for ATS</li>
                   <li>Custom job alerts</li>
+                  <li>Priority support</li>
+                  <li>Advanced job search filters</li>
+                  <li>Early Access</li>
+                  
                 </ul>
                 <div className="flex space-x-4">
                   <Button

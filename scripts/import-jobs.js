@@ -1,11 +1,37 @@
 // scripts/import-jobs.js
-const { PrismaClient } = require('@prisma/client');
+// Load environment variables from .env file
+require('dotenv').config();
+
 const fs = require('fs/promises');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
+const { Pool } = require('pg'); // Add PostgreSQL client for direct table creation
 
-const prisma = new PrismaClient();
+// Initialize Supabase client
+// Try to get values from environment variables
+let supabaseUrl = process.env.SUPABASE_URL;
+let supabaseKey = process.env.SUPABASE_SERVICE_KEY; // Use service key for admin access
+let pgConnectionString = process.env.DATABASE_URL; // For direct PostgreSQL connection
 
-// Tech mapping similar to our TypeScript version but in CommonJS
+// Check if values are set
+if (!supabaseUrl) {
+  console.error('Error: SUPABASE_URL is not set');
+  console.log('Please set your Supabase URL in the .env file');
+  process.exit(1);
+}
+
+if (!supabaseKey) {
+  console.error('Error: SUPABASE_SERVICE_KEY is not set');
+  console.log('Please set your Supabase service key in the .env file');
+  process.exit(1);
+}
+
+// Debug info
+console.log(`Connecting to Supabase URL: ${supabaseUrl}`);
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Tech mapping similar to original version
 const TECH_MAPPING = {
   // Languages
   'JavaScript': ['javascript', 'js', 'es6', 'es2015', 'ecmascript', 'vanilla js', 'vanilla javascript'],
@@ -20,7 +46,7 @@ const TECH_MAPPING = {
   'Rust': ['rust', 'rustlang'],
   'Swift': ['swift', 'swiftui'],
   'Kotlin': ['kotlin'],
-  // ... (same as TypeScript version)
+  // ... (add the rest of your mappings)
 };
 
 const TECH_VARIATIONS = Object.entries(TECH_MAPPING).reduce((acc, [main, variations]) => {
@@ -47,64 +73,188 @@ function extractTechStack(text) {
   return Array.from(foundTechs);
 }
 
+// Helper function to check if a table exists and create it if not
+async function ensureTableExists(tableName, createTableSQL) {
+  // Check if table exists
+  const { data, error } = await supabase
+    .from(tableName)
+    .select('*')
+    .limit(1)
+    .catch(() => ({ data: null, error: { message: `Table ${tableName} does not exist` } }));
+  
+  if (error) {
+    console.log(`Table ${tableName} doesn't exist. Creating it...`);
+    
+    // If PostgreSQL connection string is available, use direct connection
+    if (pgConnectionString) {
+      try {
+        const pool = new Pool({ connectionString: pgConnectionString });
+        await pool.query(createTableSQL);
+        await pool.end();
+        console.log(`Table ${tableName} created successfully`);
+        return true;
+      } catch (pgError) {
+        console.error(`Error creating table ${tableName} with direct connection:`, pgError);
+        throw pgError;
+      }
+    } else {
+      // Without direct PostgreSQL access, we'll need to use Supabase's SQL execution
+      // This might not be available in all Supabase plans
+      console.error(`Cannot create table ${tableName}. Please create it manually.`);
+      console.log(`SQL to create table:\n${createTableSQL}`);
+      throw new Error(`Table ${tableName} doesn't exist and cannot be created automatically`);
+    }
+  }
+  
+  return true;
+}
+
+// Main import function
 async function importJobs() {
   console.log('Starting job import...');
 
   try {
+    // Ensure tables exist
+    console.log('Checking database schema...');
+    
+    await ensureTableExists('tech', `
+      CREATE TABLE public.tech (
+        id SERIAL PRIMARY KEY,
+        name TEXT UNIQUE NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
+    await ensureTableExists('jobs', `
+      CREATE TABLE public.jobs (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        company TEXT,
+        location TEXT,
+        description TEXT,
+        url TEXT,
+        source TEXT,
+        posted_at TIMESTAMP WITH TIME ZONE,
+        salary TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
+    await ensureTableExists('job_tech', `
+      CREATE TABLE public.job_tech (
+        id SERIAL PRIMARY KEY,
+        job_id INTEGER REFERENCES public.jobs(id) ON DELETE CASCADE,
+        tech_id INTEGER REFERENCES public.tech(id) ON DELETE CASCADE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(job_id, tech_id)
+      );
+    `);
+    
+    console.log('Database schema verified/created');
+
+    // Load job data
     const dataPath = path.join(__dirname, '..', 'jobs-data.json');
     const rawData = await fs.readFile(dataPath, 'utf8');
     const { jobs } = JSON.parse(rawData);
 
     console.log(`Found ${jobs.length} jobs to import`);
 
-    // Clear existing data
-    await prisma.jobTech.deleteMany();
-    await prisma.job.deleteMany();
-    await prisma.tech.deleteMany();
-
-    console.log('Cleared existing data');
-
+    // Import jobs in batches for better performance
     let importedCount = 0;
-    for (const jobData of jobs) {
-      // Extract tech stack from both title and description
-      const titleAndDescription = `${jobData.title} ${jobData.description}`;
-      const techStack = extractTechStack(titleAndDescription);
+    const batchSize = 10;
+    
+    for (let i = 0; i < jobs.length; i += batchSize) {
+      const batch = jobs.slice(i, i + batchSize);
       
-      console.log(`\nProcessing job: ${jobData.title}`);
-      console.log('Detected tech stack:', techStack);
+      for (const jobData of batch) {
+        try {
+          // Extract tech stack from both title and description
+          const titleAndDescription = `${jobData.title} ${jobData.description}`;
+          const techStack = extractTechStack(titleAndDescription);
+          
+          console.log(`\nProcessing job: ${jobData.title}`);
+          console.log('Detected tech stack:', techStack);
 
-      const job = await prisma.job.create({
-        data: {
-          title: jobData.title,
-          company: jobData.company,
-          location: jobData.location,
-          description: jobData.description,
-          url: jobData.url,
-          source: jobData.source,
-          postedAt: new Date(jobData.postedAt),
-          salary: jobData.salary,
-        }
-      });
+          // Insert job
+          const { data: job, error: jobError } = await supabase
+            .from('jobs')
+            .insert({
+              title: jobData.title,
+              company: jobData.company,
+              location: jobData.location,
+              description: jobData.description,
+              url: jobData.url,
+              source: jobData.source,
+              posted_at: new Date(jobData.postedAt).toISOString(),
+              salary: jobData.salary,
+            })
+            .select();
 
-      // Create tech stack connections
-      for (const techName of techStack) {
-        const tech = await prisma.tech.upsert({
-          where: { name: techName },
-          create: { name: techName },
-          update: {}
-        });
-
-        await prisma.jobTech.create({
-          data: {
-            jobId: job.id,
-            techId: tech.id
+          if (jobError) {
+            console.error(`Error inserting job ${jobData.title}:`, jobError);
+            continue; // Skip to the next job
           }
-        });
-      }
 
-      importedCount++;
-      if (importedCount % 10 === 0) {
-        console.log(`Imported ${importedCount}/${jobs.length} jobs`);
+          const jobId = job[0].id;
+          
+          // Process tech stack for this job
+          for (const techName of techStack) {
+            try {
+              // Find or create tech
+              const { data: techData, error: techError } = await supabase
+                .from('tech')
+                .select('id')
+                .eq('name', techName)
+                .maybeSingle();
+              
+              let techId;
+              
+              if (techError) {
+                console.error(`Error finding tech ${techName}:`, techError);
+                continue; // Skip to the next tech
+              }
+              
+              if (techData) {
+                techId = techData.id;
+              } else {
+                // Tech doesn't exist, create it
+                const { data: newTech, error: createTechError } = await supabase
+                  .from('tech')
+                  .insert({ name: techName })
+                  .select();
+                
+                if (createTechError) {
+                  console.error(`Error creating tech ${techName}:`, createTechError);
+                  continue; // Skip to the next tech
+                }
+                
+                techId = newTech[0].id;
+              }
+              
+              // Create the job-tech relationship
+              const { error: relationError } = await supabase
+                .from('job_tech')
+                .insert({
+                  job_id: jobId,
+                  tech_id: techId
+                });
+              
+              if (relationError) {
+                console.error(`Error creating relationship between job ${jobId} and tech ${techId}:`, relationError);
+              }
+            } catch (techProcessError) {
+              console.error(`Error processing tech ${techName}:`, techProcessError);
+            }
+          }
+          
+          importedCount++;
+          if (importedCount % 10 === 0) {
+            console.log(`Imported ${importedCount}/${jobs.length} jobs`);
+          }
+          
+        } catch (jobProcessError) {
+          console.error(`Error processing job ${jobData.title}:`, jobProcessError);
+        }
       }
     }
 
@@ -113,9 +263,10 @@ async function importJobs() {
 
   } catch (error) {
     console.error('Error during import:', error);
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
-importJobs().catch(console.error);
+importJobs().catch(error => {
+  console.error('Fatal error during import:', error);
+  process.exit(1);
+});
