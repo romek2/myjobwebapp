@@ -1,3 +1,4 @@
+'use client'
 import React, { useState } from 'react';
 import LoginButton from '../login-button';
 import Link from 'next/link';
