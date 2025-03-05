@@ -4,33 +4,35 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import AdvancedJobAnalysis from '@/components/AdvancedJobAnalysis';
+import { getJobById } from '@/lib/services/jobs';
+import { Job } from '@/types/job';
 
 export default function JobDetailPage() {
   const params = useParams();
   const jobId = params.id as string;
-  const [job, setJob] = useState<any>(null);
+  const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate fetching job details
-    const fetchJob = async () => {
-      // In a real app, you would fetch from an API
-      // For demo purposes, we'll use a mock job
-      setTimeout(() => {
-        setJob({
-          id: jobId,
-          title: "Senior Frontend Developer",
-          company: "TechCorp Inc.",
-          location: "San Francisco, CA (Remote)",
-          description: "We are looking for a Senior Frontend Developer with experience in React, TypeScript, and Next.js. The ideal candidate will have 5+ years of experience building high-performance web applications.",
-          salary: "$120,000 - $150,000",
-          techStack: ["React", "TypeScript", "Next.js", "Tailwind CSS"]
-        });
+    async function fetchJobDetails() {
+      setLoading(true);
+      try {
+        const jobData = await getJobById(jobId);
+        if (jobData) {
+          setJob(jobData);
+        } else {
+          setError('Job not found');
+        }
+      } catch (err) {
+        console.error('Error fetching job details:', err);
+        setError('Failed to load job details');
+      } finally {
         setLoading(false);
-      }, 800);
-    };
+      }
+    }
 
-    fetchJob();
+    fetchJobDetails();
   }, [jobId]);
 
   if (loading) {
@@ -45,11 +47,11 @@ export default function JobDetailPage() {
     );
   }
 
-  if (!job) {
+  if (error || !job) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="bg-red-50 border-l-4 border-red-400 p-4">
-          <p className="text-red-700">Job not found</p>
+          <p className="text-red-700">{error || 'Job not found'}</p>
         </div>
       </div>
     );
@@ -95,9 +97,14 @@ export default function JobDetailPage() {
       <AdvancedJobAnalysis jobId={jobId} />
       
       <div className="flex justify-center mt-8">
-        <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
+        <a 
+          href={job.url} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+        >
           Apply Now
-        </button>
+        </a>
       </div>
     </div>
   );
