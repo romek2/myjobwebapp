@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { NextAuthProvider } from '../components/ui/providers'
 import Navbar from '@/components//ui/resume-matcher/navbar';
+import Footer from '@/components/ui/footer'; 
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -23,6 +24,7 @@ export default function RootLayout({
         <NextAuthProvider>
         <Navbar />
           {children}
+          <Footer />
         </NextAuthProvider>
       </body>
     </html>
