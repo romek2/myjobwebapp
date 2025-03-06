@@ -48,11 +48,7 @@ export default function Footer() {
                   Job Alerts
                 </Link>
               </li>
-              <li>
-                <Link href="/?tech=React" className="text-sm text-gray-600 hover:text-blue-600">
-                  React Jobs
-                </Link>
-              </li>
+             
               <li>
                 <Link href="/?tech=JavaScript" className="text-sm text-gray-600 hover:text-blue-600">
                   JavaScript Jobs
@@ -90,11 +86,7 @@ export default function Footer() {
                   Interview Prep
                 </a>
               </li>
-              <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-blue-600">
-                  Salary Guide
-                </a>
-              </li>
+            
             </ul>
           </div>
 
@@ -103,22 +95,22 @@ export default function Footer() {
             <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Company</h3>
             <ul className="mt-4 space-y-4">
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-blue-600">
+                <a href="/about" className="text-sm text-gray-600 hover:text-blue-600">
                   About Us
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-blue-600">
+                <a href="" className="text-sm text-gray-600 hover:text-blue-600">
                   Contact
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-blue-600">
+                <a href="/privacy-policy" className="text-sm text-gray-600 hover:text-blue-600">
                   Privacy Policy
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-blue-600">
+                <a href="/terms" className="text-sm text-gray-600 hover:text-blue-600">
                   Terms of Service
                 </a>
               </li>
