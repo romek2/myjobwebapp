@@ -77,12 +77,12 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-blue-600">
+                <a href="resume-tips" className="text-sm text-gray-600 hover:text-blue-600">
                   Resume Tips
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-blue-600">
+                <a href="interview-tips" className="text-sm text-gray-600 hover:text-blue-600">
                   Interview Prep
                 </a>
               </li>
