@@ -1,24 +1,73 @@
 // app/api/alerts/[id]/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
 import { hasProAccessServer } from '@/lib/subscription';
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
+// GET handler with correct Next.js App Router types
+export async function GET(
+  request: Request,
+  context: { params: { id: string } }
+) {
+  const id = context.params.id;
+  
+  try {
+    // Authenticate the user
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Check if user has PRO access
+    const hasPro = await hasProAccessServer(session.user.id);
+    if (!hasPro) {
+      return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
+    }
+    
+    // Initialize Supabase client
+    const supabase = createServerSupabase();
+    
+    // Fetch the alert with history
+    const { data: alert, error } = await supabase
+      .from('job_alerts')
+      .select(`
+        *,
+        job_alert_history(
+          id,
+          job_id,
+          sent_at
+        )
+      `)
+      .eq('id', id)
+      .eq('user_id', session.user.id)
+      .single();
+    
+    if (error || !alert) {
+      return NextResponse.json(
+        { error: 'Alert not found or access denied' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json(alert);
+  } catch (error) {
+    console.error(`Error in GET /api/alerts/[id]:`, error);
+    return NextResponse.json(
+      { error: 'An unexpected error occurred' },
+      { status: 500 }
+    );
+  }
 }
 
-// PATCH handler to update an alert (e.g., toggle active state)
+// PATCH handler with correct Next.js App Router types
 export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
+  request: Request,
+  context: { params: { id: string } }
 ) {
+  const id = context.params.id;
+  
   try {
-    const id = params.id;
-    
     // Authenticate the user
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -88,14 +137,14 @@ export async function PATCH(
   }
 }
 
-// DELETE handler to remove an alert
+// DELETE handler with correct Next.js App Router types
 export async function DELETE(
   request: Request,
-  { params }: RouteParams
+  context: { params: { id: string } }
 ) {
+  const id = context.params.id;
+  
   try {
-    const id = params.id;
-    
     // Authenticate the user
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -149,61 +198,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(`Error in DELETE /api/alerts/[id]:`, error);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred' },
-      { status: 500 }
-    );
-  }
-}
-
-// GET handler to retrieve a specific alert
-export async function GET(
-  request: Request,
-  { params }: RouteParams
-) {
-  try {
-    const id = params.id;
-    
-    // Authenticate the user
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Check if user has PRO access
-    const hasPro = await hasProAccessServer(session.user.id);
-    if (!hasPro) {
-      return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
-    }
-    
-    // Initialize Supabase client
-    const supabase = createServerSupabase();
-    
-    // Fetch the alert with history
-    const { data: alert, error } = await supabase
-      .from('job_alerts')
-      .select(`
-        *,
-        job_alert_history(
-          id,
-          job_id,
-          sent_at
-        )
-      `)
-      .eq('id', id)
-      .eq('user_id', session.user.id)
-      .single();
-    
-    if (error || !alert) {
-      return NextResponse.json(
-        { error: 'Alert not found or access denied' },
-        { status: 404 }
-      );
-    }
-    
-    return NextResponse.json(alert);
-  } catch (error) {
-    console.error(`Error in GET /api/alerts/[id]:`, error);
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }
