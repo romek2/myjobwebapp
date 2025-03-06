@@ -5,10 +5,16 @@ import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
 import { hasProAccessServer } from '@/lib/subscription';
 
+interface RouteParams {
+  params: {
+    id: string;
+  };
+}
+
 // PATCH handler to update an alert (e.g., toggle active state)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteParams
 ) {
   try {
     const id = params.id;
@@ -84,8 +90,8 @@ export async function PATCH(
 
 // DELETE handler to remove an alert
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  request: Request,
+  { params }: RouteParams
 ) {
   try {
     const id = params.id;
@@ -153,7 +159,7 @@ export async function DELETE(
 // GET handler to retrieve a specific alert
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: RouteParams
 ) {
   try {
     const id = params.id;
