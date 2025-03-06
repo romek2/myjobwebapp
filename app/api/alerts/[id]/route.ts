@@ -5,47 +5,39 @@ import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
 import { hasProAccessServer } from '@/lib/subscription';
 
-// GET handler with correct Next.js App Router types
+// Note: Using explicit parameter/type naming to match Next.js expectations
 export async function GET(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
-  const id = context.params.id;
+  const id = params.id;
   
   try {
-    // Authenticate the user
+    // Authentication
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Check if user has PRO access
+    // Check PRO status
     const hasPro = await hasProAccessServer(session.user.id);
     if (!hasPro) {
       return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
     }
     
-    // Initialize Supabase client
+    // Get data from Supabase
     const supabase = createServerSupabase();
     
-    // Fetch the alert with history
     const { data: alert, error } = await supabase
       .from('job_alerts')
-      .select(`
-        *,
-        job_alert_history(
-          id,
-          job_id,
-          sent_at
-        )
-      `)
+      .select('*')
       .eq('id', id)
       .eq('user_id', session.user.id)
       .single();
     
     if (error || !alert) {
       return NextResponse.json(
-        { error: 'Alert not found or access denied' },
+        { error: 'Alert not found' },
         { status: 404 }
       );
     }
@@ -60,30 +52,29 @@ export async function GET(
   }
 }
 
-// PATCH handler with correct Next.js App Router types
 export async function PATCH(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
-  const id = context.params.id;
+  const id = params.id;
   
   try {
-    // Authenticate the user
+    // Authentication
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Check if user has PRO access
+    // Check PRO status
     const hasPro = await hasProAccessServer(session.user.id);
     if (!hasPro) {
       return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
     }
     
-    // Initialize Supabase client
+    // Verify ownership and update
     const supabase = createServerSupabase();
     
-    // Verify the alert belongs to the user
+    // First check if alert exists and belongs to user
     const { data: existingAlert, error: fetchError } = await supabase
       .from('job_alerts')
       .select('*')
@@ -98,10 +89,10 @@ export async function PATCH(
       );
     }
     
-    // Get update data from request
+    // Get update data
     const updateData = await request.json();
     
-    // Ensure only allowed fields are updated
+    // Validate fields
     const allowedUpdates = ['active', 'name', 'keywords', 'frequency'];
     const sanitizedUpdate: Record<string, any> = {};
     
@@ -111,7 +102,7 @@ export async function PATCH(
       }
     }
     
-    // Update the alert
+    // Update alert
     const { data: updatedAlert, error: updateError } = await supabase
       .from('job_alerts')
       .update(sanitizedUpdate)
@@ -120,7 +111,6 @@ export async function PATCH(
       .single();
     
     if (updateError) {
-      console.error('Error updating alert:', updateError);
       return NextResponse.json(
         { error: 'Failed to update alert' },
         { status: 500 }
@@ -137,30 +127,29 @@ export async function PATCH(
   }
 }
 
-// DELETE handler with correct Next.js App Router types
 export async function DELETE(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
-  const id = context.params.id;
+  const id = params.id;
   
   try {
-    // Authenticate the user
+    // Authentication
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Check if user has PRO access
+    // Check PRO status
     const hasPro = await hasProAccessServer(session.user.id);
     if (!hasPro) {
       return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
     }
     
-    // Initialize Supabase client
+    // Verify ownership and delete
     const supabase = createServerSupabase();
     
-    // Verify the alert belongs to the user
+    // First check if alert exists and belongs to user
     const { data: existingAlert, error: fetchError } = await supabase
       .from('job_alerts')
       .select('id')
@@ -175,21 +164,20 @@ export async function DELETE(
       );
     }
     
-    // Delete the alert
+    // Delete alert
     const { error: deleteError } = await supabase
       .from('job_alerts')
       .delete()
       .eq('id', id);
     
     if (deleteError) {
-      console.error('Error deleting alert:', deleteError);
       return NextResponse.json(
         { error: 'Failed to delete alert' },
         { status: 500 }
       );
     }
     
-    // Also delete any alert history
+    // Also delete related history
     await supabase
       .from('job_alert_history')
       .delete()
