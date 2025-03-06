@@ -152,7 +152,7 @@ export async function DELETE(
 
 // GET handler to retrieve a specific alert
 export async function GET(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {

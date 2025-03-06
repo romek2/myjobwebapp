@@ -6,13 +6,24 @@ import { createServerSupabase } from '@/lib/supabase';
 import sgMail from '@sendgrid/mail';
 
 // Initialize SendGrid with API key
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+} else {
+  console.warn('SENDGRID_API_KEY is not set. Email functionality will not work.');
+}
 
 /**
  * Send job alert email
  */
 async function sendJobAlertEmail(userEmail, userName, alertName, matchingJobs) {
   try {
+    if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
+      console.error('Missing SendGrid configuration');
+      return false;
+    }
+
+    console.log(`Attempting to send email to ${userEmail} for alert "${alertName}"`);
+    
     // Format jobs for email
     const jobsHtml = matchingJobs.map(job => `
       <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px;">
@@ -28,7 +39,7 @@ async function sendJobAlertEmail(userEmail, userName, alertName, matchingJobs) {
       to: userEmail,
       from: process.env.SENDGRID_FROM_EMAIL,
       subject: `New Jobs Matching "${alertName}"`,
-      text: `Hello ${userName}! We found ${matchingJobs.length} new job opportunities matching your "${alertName}" alert.`,
+      text: `Hello ${userName || 'there'}! We found ${matchingJobs.length} new job opportunities matching your "${alertName}" alert.`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="padding: 20px; background-color: #4f46e5; text-align: center;">
@@ -58,11 +69,14 @@ async function sendJobAlertEmail(userEmail, userName, alertName, matchingJobs) {
     };
 
     // Send the email
-    await sgMail.send(msg);
-    console.log(`Email sent to ${userEmail} for alert "${alertName}"`);
+    const response = await sgMail.send(msg);
+    console.log(`Email sent successfully to ${userEmail}. Status code: ${response[0].statusCode}`);
     return true;
   } catch (error) {
     console.error('Error sending alert email:', error);
+    if (error.response) {
+      console.error('SendGrid API error details:', error.response.body);
+    }
     return false;
   }
 }
@@ -100,9 +114,11 @@ export async function POST(request) {
         name,
         keywords,
         user_id,
+        active,
         users (
           email,
-          name
+          name,
+          subscription_status
         )
       `)
       .eq('id', alertId)
@@ -117,6 +133,21 @@ export async function POST(request) {
       );
     }
     
+    // Check if the alert is active and user has PRO status
+    if (!alert.active) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'This alert is currently paused. Please activate it first.' 
+      });
+    }
+    
+    if (alert.users?.subscription_status !== 'PRO') {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Premium alerts are only available for PRO subscribers.' 
+      });
+    }
+    
     // Get previously sent jobs to avoid duplicates
     const { data: sentJobs } = await supabase
       .from('job_alert_history')
@@ -128,12 +159,21 @@ export async function POST(request) {
     // Get keywords from alert
     const keywords = alert.keywords.split(',').map(k => k.trim().toLowerCase());
     
-    // Build search conditions for each keyword
+    // Build search conditions for each keyword (checking both title and description)
     const searchConditions = [];
     keywords.forEach(keyword => {
-      searchConditions.push(`title.ilike.%${keyword}%`);
-      searchConditions.push(`description.ilike.%${keyword}%`);
+      if (keyword.length > 0) {
+        searchConditions.push(`title.ilike.%${keyword}%`);
+        searchConditions.push(`description.ilike.%${keyword}%`);
+      }
     });
+    
+    if (searchConditions.length === 0) {
+      return NextResponse.json({
+        success: false,
+        message: 'No valid keywords found in this alert. Please add some keywords.'
+      });
+    }
     
     // Search for matching jobs
     let jobsQuery = supabase
@@ -166,39 +206,42 @@ export async function POST(request) {
     
     if (matchingJobs && matchingJobs.length > 0) {
       // Send email notification
-      await sendJobAlertEmail(
+      const emailSent = await sendJobAlertEmail(
         alert.users.email,
         alert.users.name || 'there',
         alert.name,
         matchingJobs
       );
       
-      // Record which jobs were sent
-      const historyRecords = matchingJobs.map(job => ({
-        alert_id: alertId,
-        job_id: job.id,
-        sent_at: new Date().toISOString()
-      }));
-      
-      await supabase
-        .from('job_alert_history')
-        .insert(historyRecords);
+      // Record which jobs were sent (only if email was sent successfully)
+      if (emailSent) {
+        const historyRecords = matchingJobs.map(job => ({
+          alert_id: alertId,
+          job_id: job.id,
+          sent_at: new Date().toISOString()
+        }));
+        
+        await supabase
+          .from('job_alert_history')
+          .insert(historyRecords);
+      }
       
       return NextResponse.json({ 
-        success: true, 
-        jobCount: matchingJobs.length 
+        success: emailSent,
+        jobCount: matchingJobs.length,
+        emailSent 
       });
     }
     
     return NextResponse.json({ 
       success: true, 
       jobCount: 0,
-      message: 'No new matching jobs found'
+      message: 'No new matching jobs found for your alert criteria.'
     });
   } catch (error) {
     console.error('Error processing alert:', error);
     return NextResponse.json(
-      { error: 'Failed to process alert' },
+      { error: 'Failed to process alert', details: error.message },
       { status: 500 }
     );
   }
@@ -206,12 +249,23 @@ export async function POST(request) {
 
 // GET endpoint for processing all alerts (could be called by a cron job)
 export async function GET(request) {
-  // This endpoint should be secured in production
-  // For example with an API key header or authentication
+  // Check for API key authorization for scheduled runs
+  const { searchParams } = new URL(request.url);
+  const apiKey = searchParams.get('apiKey');
+  const frequency = searchParams.get('frequency') || 'daily';
+  
+  // Validate API key for production security
+  if (process.env.NODE_ENV === 'production') {
+    const validApiKey = process.env.ALERTS_CRON_API_KEY;
+    if (!validApiKey || apiKey !== validApiKey) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
+  
   try {
     const supabase = createServerSupabase();
     
-    // Get all active alerts
+    // Get all active alerts matching the requested frequency
     const { data: alerts, error: alertsError } = await supabase
       .from('job_alerts')
       .select(`
@@ -226,13 +280,14 @@ export async function GET(request) {
           subscription_status
         )
       `)
-      .eq('active', true);
+      .eq('active', true)
+      .eq('frequency', frequency);
     
     if (alertsError) {
       throw alertsError;
     }
     
-    console.log(`Processing ${alerts?.length || 0} active job alerts`);
+    console.log(`Processing ${alerts?.length || 0} active job alerts with frequency: ${frequency}`);
     
     let processedCount = 0;
     let emailsSent = 0;
@@ -244,16 +299,8 @@ export async function GET(request) {
         continue;
       }
       
-      // Check frequency (skip if not due)
-      // This is a simplified implementation - you'd typically check last run time
-      if (alert.frequency === 'weekly') {
-        // Check if it's Monday (0 = Sunday, 1 = Monday)
-        if (new Date().getDay() !== 1) continue;
-      }
-      
       try {
-        // Rest of processing is similar to the POST handler
-        // Get previously sent jobs
+        // Get previously sent jobs to avoid duplicates
         const { data: sentJobs } = await supabase
           .from('job_alert_history')
           .select('job_id')
@@ -262,7 +309,12 @@ export async function GET(request) {
         const excludedJobIds = sentJobs?.map(record => record.job_id) || [];
         
         // Get keywords from alert
-        const keywords = alert.keywords.split(',').map(k => k.trim().toLowerCase());
+        const keywords = alert.keywords.split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+        
+        if (keywords.length === 0) {
+          console.log(`Skipping alert ${alert.id} - No valid keywords`);
+          continue;
+        }
         
         // Build search conditions for each keyword
         const searchConditions = [];
@@ -284,17 +336,15 @@ export async function GET(request) {
         
         // For daily alerts, look at last 24 hours
         const timeAgo = new Date();
-        if (alert.frequency === 'daily') {
+        if (frequency === 'daily') {
           timeAgo.setDate(timeAgo.getDate() - 1);
-        } else if (alert.frequency === 'weekly') {
+        } else if (frequency === 'weekly') {
           timeAgo.setDate(timeAgo.getDate() - 7);
         } else {
           // For real-time, look at last hour
           timeAgo.setHours(timeAgo.getHours() - 1);
         }
         
-        // app/api/alerts/process/route.js (continued)
-
         jobsQuery = jobsQuery.gt('posted_at', timeAgo.toISOString());
         
         // Limit the number of jobs to return
@@ -308,6 +358,8 @@ export async function GET(request) {
         }
         
         if (matchingJobs && matchingJobs.length > 0) {
+          console.log(`Found ${matchingJobs.length} matching jobs for alert ${alert.id}`);
+          
           // Send email notification
           const emailSent = await sendJobAlertEmail(
             alert.users.email,
@@ -330,6 +382,8 @@ export async function GET(request) {
               .from('job_alert_history')
               .insert(historyRecords);
           }
+        } else {
+          console.log(`No new matching jobs for alert ${alert.id}`);
         }
         
         processedCount++;
@@ -341,12 +395,13 @@ export async function GET(request) {
     return NextResponse.json({
       success: true,
       processed: processedCount,
-      emailsSent: emailsSent
+      emailsSent: emailsSent,
+      frequency: frequency
     });
   } catch (error) {
     console.error('Error processing job alerts:', error);
     return NextResponse.json(
-      { error: 'Failed to process job alerts' },
+      { error: 'Failed to process job alerts', details: error.message },
       { status: 500 }
     );
   }
