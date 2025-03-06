@@ -247,33 +247,7 @@ export default function InterviewPrepPage() {
               </p>
             </div>
             
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-blue-50 p-5 rounded-lg border border-blue-100">
-                <h4 className="font-medium text-blue-800 mb-2">AI Practice Interviews</h4>
-                <ul className="text-gray-700 space-y-2 mb-4">
-                  <li>• Tailored to your target role and experience level</li>
-                  <li>• Technical and behavioral question scenarios</li>
-                  <li>• Receive instant feedback and suggestions</li>
-                  <li>• Unlimited practice sessions</li>
-                </ul>
-                <button className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                  Try AI Interview
-                </button>
-              </div>
-              
-              <div className="bg-green-50 p-5 rounded-lg border border-green-100">
-                <h4 className="font-medium text-green-800 mb-2">Expert Coaching Sessions</h4>
-                <ul className="text-gray-700 space-y-2 mb-4">
-                  <li>• 1-on-1 sessions with industry professionals</li>
-                  <li>• Personalized feedback on your responses</li>
-                  <li>• Mock interviews with real-world scenarios</li>
-                  <li>• Career guidance from experienced recruiters</li>
-                </ul>
-                <button className="w-full py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
-                  Book a Coach
-                </button>
-              </div>
-            </div>
+          
             
             <div className="mt-6 text-center text-gray-600 text-sm">
               Not a PRO member yet? <a href="/pricing" className="text-blue-600 hover:underline">Upgrade now</a> to access these premium features.
