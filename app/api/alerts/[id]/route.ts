@@ -9,8 +9,8 @@ import { hasProAccessServer } from '@/lib/subscription';
 async function userOwnsAlert(userId: string, alertId: string) {
   const supabase = createServerSupabase();
   const { data, error } = await supabase
-    .from('job_alerts')
-    .select('user_id')
+    .from('JobAlert')
+    .select('userId')
     .eq('id', alertId)
     .single();
   
@@ -18,16 +18,23 @@ async function userOwnsAlert(userId: string, alertId: string) {
     return false;
   }
   
-  return data.user_id === userId;
+  return data.userId === userId;
+}
+
+// Helper to extract ID from the URL path
+function getIdFromPath(request: NextRequest): string {
+  // Get the pathname (e.g., /api/job-alerts/abc123)
+  const pathname = request.nextUrl.pathname;
+  // Split by / and get the last segment
+  const segments = pathname.split('/');
+  return segments[segments.length - 1];
 }
 
 // PATCH handler - update an alert
-export async function PATCH(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest) {
   try {
-    const alertId = context.params.id;
+    const alertId = getIdFromPath(request);
+    console.log('Updating alert with ID:', alertId);
     
     // Get user session
     const session = await getServerSession(authOptions);
@@ -51,7 +58,9 @@ export async function PATCH(
     const body = await request.json();
     
     // Build update object
-    const updateData: Record<string, any> = {};
+    const updateData: Record<string, any> = {
+      updatedAt: new Date().toISOString()
+    };
     
     if (body.active !== undefined) {
       if (typeof body.active !== 'boolean') {
@@ -82,20 +91,12 @@ export async function PATCH(
       updateData.frequency = body.frequency;
     }
     
-    // If nothing to update
-    if (Object.keys(updateData).length === 0) {
-      return NextResponse.json(
-        { error: 'No fields to update' },
-        { status: 400 }
-      );
-    }
-    
     // Initialize Supabase
     const supabase = createServerSupabase();
     
-    // Update alert
+    // Update alert - using camelCase column names from the actual schema
     const { data, error } = await supabase
-      .from('job_alerts')
+      .from('JobAlert')
       .update(updateData)
       .eq('id', alertId)
       .select()
@@ -109,19 +110,7 @@ export async function PATCH(
       );
     }
     
-    // Format response
-    const formattedAlert = {
-      id: data.id,
-      name: data.name,
-      keywords: data.keywords,
-      frequency: data.frequency,
-      active: data.active,
-      userId: data.user_id,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at
-    };
-    
-    return NextResponse.json(formattedAlert);
+    return NextResponse.json(data);
   } catch (error) {
     console.error(`Unexpected error in PATCH /api/job-alerts/[id]:`, error);
     return NextResponse.json(
@@ -132,12 +121,10 @@ export async function PATCH(
 }
 
 // DELETE handler - delete an alert
-export async function DELETE(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest) {
   try {
-    const alertId = context.params.id;
+    const alertId = getIdFromPath(request);
+    console.log('Deleting alert with ID:', alertId);
     
     // Get user session
     const session = await getServerSession(authOptions);
@@ -160,9 +147,9 @@ export async function DELETE(
     // Initialize Supabase
     const supabase = createServerSupabase();
     
-    // Delete the alert
+    // Delete the alert - from the actual schema
     const { error } = await supabase
-      .from('job_alerts')
+      .from('JobAlert')
       .delete()
       .eq('id', alertId);
     
