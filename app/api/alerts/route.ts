@@ -1,12 +1,13 @@
 // app/api/alerts/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { hasProAccessServer } from '@/lib/subscription';
 
 // GET handler to fetch all alerts for the current user
-export async function GET() {
+export async function GET(request: NextRequest) {
+  console.log('GET request to /api/alerts');
   try {
     // Authenticate the user
     const session = await getServerSession(authOptions);
@@ -21,16 +22,26 @@ export async function GET() {
     }
     
     // Fetch alerts for the current user
-    const alerts = await prisma.jobAlert.findMany({
-      where: {
-        userId: session.user.id
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
-    
-    return NextResponse.json(alerts);
+    try {
+      console.log('Fetching alerts for user:', session.user.id);
+      const alerts = await prisma.jobAlert.findMany({
+        where: {
+          userId: session.user.id
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+      
+      console.log(`Found ${alerts.length} alerts`);
+      return NextResponse.json(alerts);
+    } catch (dbError: any) {
+      console.error('Database error fetching alerts:', dbError);
+      return NextResponse.json(
+        { error: `Database error: ${dbError.message}` },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error('Error in GET /api/alerts:', error);
     return NextResponse.json(
@@ -41,7 +52,8 @@ export async function GET() {
 }
 
 // POST handler to create a new alert
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  console.log('POST request to /api/alerts');
   try {
     // Authenticate the user
     const session = await getServerSession(authOptions);
@@ -90,17 +102,27 @@ export async function POST(request: Request) {
     }
     
     // Create the new alert
-    const alert = await prisma.jobAlert.create({
-      data: {
-        userId: session.user.id,
-        name,
-        keywords,
-        frequency,
-        active: true
-      }
-    });
-    
-    return NextResponse.json(alert);
+    try {
+      console.log('Creating new alert:', { name, keywords, frequency });
+      const alert = await prisma.jobAlert.create({
+        data: {
+          userId: session.user.id,
+          name,
+          keywords,
+          frequency,
+          active: true
+        }
+      });
+      
+      console.log('Alert created:', alert);
+      return NextResponse.json(alert);
+    } catch (dbError: any) {
+      console.error('Database error creating alert:', dbError);
+      return NextResponse.json(
+        { error: `Database error: ${dbError.message}`, code: dbError.code },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error('Error in POST /api/alerts:', error);
     return NextResponse.json(
