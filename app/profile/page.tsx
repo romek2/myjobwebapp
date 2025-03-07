@@ -1,273 +1,397 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { redirect, useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { useProAccess } from '@/lib/subscription';
 import Link from 'next/link';
 
-function ProfileContent() {
-  const { data: session, status } = useSession({
-    required: true,
-    onUnauthenticated() {
-      redirect('/')
-    }
+// Define types
+type Alert = {
+  id: string;
+  name: string;
+  keywords: string;
+  frequency: string;
+  active: boolean;
+};
+
+export default function JobAlertsPage() {
+  const { data: session } = useSession();
+  const isPro = useProAccess();
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showNewAlertForm, setShowNewAlertForm] = useState(false);
+  const [newAlert, setNewAlert] = useState({
+    name: '',
+    keywords: '',
+    frequency: 'daily'
   });
 
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isSubscribing, setIsSubscribing] = useState(false);
-  const [isManagingSubscription, setIsManagingSubscription] = useState(false);
-  
-  // Get checkout status from URL parameters
-  const checkoutStatus = searchParams.get("checkout");
+  // Fetch alerts when the page loads
+  useEffect(() => {
+    if (!session?.user || !isPro) {
+      setIsLoading(false);
+      return;
+    }
 
-  const handleSubscribe = async () => {
+    const fetchAlerts = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/job-alerts');
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch alerts');
+        }
+        
+        setAlerts(data);
+      } catch (err: any) {
+        console.error('Error fetching job alerts:', err);
+        setError(err.message || 'Failed to load alerts');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAlerts();
+  }, [session, isPro]);
+
+  // Create a new alert
+  const handleCreateAlert = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!isPro || !session) return;
+
     try {
-      setIsSubscribing(true);
-      const response = await fetch("/api/stripe/checkout", {
-        method: "POST",
+      setError(null);
+      const response = await fetch('/api/job-alerts', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify(newAlert),
       });
 
       const data = await response.json();
-
-      if (data.url) {
-        // Redirect to Stripe Checkout
-        window.location.href = data.url;
-      } else {
-        console.error("Failed to create checkout session:", data.error);
-        alert("Unable to start checkout process. Please try again.");
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create alert');
       }
-    } catch (error) {
-      console.error("Error subscribing:", error);
-      alert("Something went wrong. Please try again.");
-    } finally {
-      setIsSubscribing(false);
+
+      // Add the new alert to the list
+      setAlerts([...alerts, data]);
+      
+      // Reset the form
+      setNewAlert({
+        name: '',
+        keywords: '',
+        frequency: 'daily'
+      });
+      setShowNewAlertForm(false);
+
+    } catch (err: any) {
+      console.error('Error creating alert:', err);
+      setError(err.message || 'Failed to create alert');
     }
   };
 
-  const handleManageSubscription = async () => {
+  // Toggle alert active state
+  const handleToggleAlert = async (id: string) => {
+    if (!isPro || !session) return;
+
     try {
-      setIsManagingSubscription(true);
-      const response = await fetch("/api/stripe/portal", {
-        method: "POST",
+      const alertToUpdate = alerts.find(alert => alert.id === id);
+      if (!alertToUpdate) return;
+
+      setError(null);
+      const response = await fetch(`/api/job-alerts/${id}`, {
+        method: 'PATCH',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          active: !alertToUpdate.active
+        }),
       });
 
       const data = await response.json();
-
-      if (data.url) {
-        // Redirect to Stripe Customer Portal
-        window.location.href = data.url;
-      } else {
-        console.error("Failed to create portal session:", data.error);
-        alert("Unable to open subscription management. Please try again.");
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update alert');
       }
-    } catch (error) {
-      console.error("Error managing subscription:", error);
-      alert("Something went wrong. Please try again.");
-    } finally {
-      setIsManagingSubscription(false);
+
+      // Update the alert in the list
+      setAlerts(alerts.map(alert => 
+        alert.id === id ? { ...alert, active: !alert.active } : alert
+      ));
+
+    } catch (err: any) {
+      console.error('Error updating alert:', err);
+      setError(err.message || 'Failed to update alert');
     }
   };
 
-  if (status === "loading") {
+  // Delete an alert
+  const handleDeleteAlert = async (id: string) => {
+    if (!isPro || !session) return;
+
+    try {
+      setError(null);
+      const response = await fetch(`/api/job-alerts/${id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete alert');
+      }
+
+      // Remove the alert from the list
+      setAlerts(alerts.filter(alert => alert.id !== id));
+
+    } catch (err: any) {
+      console.error('Error deleting alert:', err);
+      setError(err.message || 'Failed to delete alert');
+    }
+  };
+
+  // If not signed in
+  if (!session) {
     return (
-      <main className="min-h-screen p-8">
-        <div className="max-w-2xl mx-auto">
-          <Card>
-            <CardContent className="p-8">
-              <div className="flex justify-center">
-                Loading...
-              </div>
-            </CardContent>
-          </Card>
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="text-center py-12">
+          <h1 className="text-2xl font-bold mb-4">Sign in to manage job alerts</h1>
+          <p className="mb-6 text-gray-600">Create personalized job alerts to get notified about new opportunities.</p>
+          <Link href="/api/auth/signin" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg">
+            Sign In
+          </Link>
         </div>
-      </main>
+      </div>
     );
   }
 
-  return (
-    <main className="min-h-screen p-8">
-      <div className="max-w-2xl mx-auto">
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Profile</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Display checkout status messages */}
-            {checkoutStatus === "success" && (
-              <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-                Your subscription was successful! You now have PRO access.
-              </div>
-            )}
-            
-            {checkoutStatus === "cancel" && (
-              <div className="mb-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
-                Your subscription process was canceled.
-              </div>
-            )}
-
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={session?.user?.image || ''} />
-                <AvatarFallback>
-                  {session?.user?.name?.[0] || session?.user?.email?.[0] || '?'}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h2 className="text-2xl font-bold">
-                  {session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}
-                </h2>
-                <p className="text-gray-500">{session?.user?.email}</p>
-                <p className="mt-2">
-                  <span className="font-medium">Subscription:</span>{" "}
-                  <span className={session?.user?.subscriptionStatus === "PRO" ? "text-green-600 font-semibold" : "text-gray-600"}>
-                    {session?.user?.subscriptionStatus || "FREE"}
-                  </span>
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Subscription Management Card */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Subscription Management</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {session?.user?.subscriptionStatus === "PRO" ? (
-              <div>
-                <p className="mb-4">
-                  You currently have a <span className="font-semibold text-green-600">PRO</span> subscription.
-                </p>
-                <Button
-                  onClick={handleManageSubscription}
-                  disabled={isManagingSubscription}
-                  className="bg-blue-500 hover:bg-blue-600 text-white"
-                >
-                  {isManagingSubscription ? "Loading..." : "Manage Subscription"}
-                </Button>
-              </div>
-            ) : (
-              <div>
-                <p className="mb-4">Upgrade to PRO to unlock all features:</p>
-                <ul className="list-disc ml-5 mb-4">
-                  <li>Resume analysis optimized for ATS</li>
-                  <li>Custom job alerts</li>
-                  <li>Priority support</li>
-                  <li>Advanced job search filters</li>
-                  <li>Early Access</li>
-                  
-                </ul>
-                <div className="flex space-x-4">
-                  <Button
-                    onClick={handleSubscribe}
-                    disabled={isSubscribing}
-                    className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-medium"
-                  >
-                    {isSubscribing ? "Loading..." : "Upgrade to PRO"}
-                  </Button>
-                  <Button
-                    onClick={() => router.push("/pricing")}
-                    variant="outline"
-                    className="border border-gray-300 hover:bg-gray-50 text-gray-700"
-                  >
-                    View Plans
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Job Management Cards */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Resumes</CardTitle>
-              <CardDescription>Upload and manage your resumes</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-gray-500">
-                <p>No resumes uploaded yet</p>
-                <Button variant="link" className="mt-2 text-blue-500 hover:text-blue-600 p-0">
-                  + Upload a Resume
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Job Alerts</CardTitle>
-              <CardDescription>Get notified about new jobs matching your criteria</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-gray-500">
-                <p>
-                  {session?.user?.subscriptionStatus === "PRO" 
-                    ? "Manage your customized job alerts" 
-                    : "Upgrade to PRO to create custom job alerts"}
-                </p>
-                <div className="mt-2">
-                  {session?.user?.subscriptionStatus === "PRO" ? (
-                    <Link href="/alerts">
-                      <Button variant="link" className="text-blue-500 hover:text-blue-600 p-0">
-                        Manage Alerts
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Button 
-                      variant="link" 
-                      className="text-blue-500 hover:text-blue-600 p-0"
-                      onClick={handleSubscribe}
-                    >
-                      Upgrade to PRO
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Job Preferences</CardTitle>
-              <CardDescription>Set preferences to improve job matching</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="space-y-1">
-                  <p className="text-sm">Desired Role: Not set</p>
-                  <p className="text-sm">Location: Not set</p>
-                  <p className="text-sm">Experience Level: Not set</p>
-                </div>
-                <Button variant="link" className="text-blue-500 hover:text-blue-600 p-0">
-                  Edit Preferences
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+  // If not a PRO user
+  if (!isPro) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <h1 className="text-3xl font-bold mb-6">Job Alerts</h1>
+        
+        <div className="bg-white border border-gray-200 rounded-lg p-8 mb-6 text-center">
+          <div className="mb-4">
+            <span className="inline-block p-3 rounded-full bg-yellow-100 text-yellow-800 mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </span>
+            <h2 className="text-2xl font-bold mb-2">Premium Job Alerts</h2>
+            <p className="text-gray-600 mb-6">
+              Upgrade to PRO to receive personalized job alerts for premium opportunities.
+            </p>
+          </div>
+          
+          <div className="bg-gray-50 p-6 rounded-lg mb-6">
+            <h3 className="font-semibold mb-4">With PRO job alerts, you'll get:</h3>
+            <ul className="text-left space-y-2 mb-6">
+              <li className="flex items-start">
+                <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Early access to premium job listings
+              </li>
+              <li className="flex items-start">
+                <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Custom alert frequencies (daily, weekly, real-time)
+              </li>
+              <li className="flex items-start">
+                <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Salary range filters and company type preferences
+              </li>
+              <li className="flex items-start">
+                <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Advanced keyword and technology matching
+              </li>
+            </ul>
+          </div>
+          
+          <Link href="/pricing" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg inline-block">
+            Upgrade to PRO
+          </Link>
         </div>
       </div>
-    </main>
-  );
-}
+    );
+  }
 
-// Main page component with Suspense boundary for useSearchParams
-export default function ProfilePage() {
+  // Main content for PRO users
   return (
-    <Suspense fallback={<div className="flex justify-center items-center h-screen">Loading profile...</div>}>
-      <ProfileContent />
-    </Suspense>
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Job Alerts</h1>
+        <button 
+          onClick={() => setShowNewAlertForm(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"
+        >
+          Create New Alert
+        </button>
+      </div>
+      
+      {/* PRO badge */}
+      <div className="mb-6 inline-flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+        <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+        </svg>
+        PRO Feature Enabled
+      </div>
+      
+      {/* Error message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+          {error}
+        </div>
+      )}
+      
+      {/* New alert form */}
+      {showNewAlertForm && (
+        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Create New Alert</h2>
+          <form onSubmit={handleCreateAlert}>
+            <div className="mb-4">
+              <label className="block text-gray-700 mb-2" htmlFor="name">Alert Name</label>
+              <input
+                id="name"
+                type="text"
+                value={newAlert.name}
+                onChange={(e) => setNewAlert({...newAlert, name: e.target.value})}
+                className="w-full p-2 border border-gray-300 rounded"
+                required
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 mb-2" htmlFor="keywords">Keywords (comma separated)</label>
+              <input
+                id="keywords"
+                type="text"
+                value={newAlert.keywords}
+                onChange={(e) => setNewAlert({...newAlert, keywords: e.target.value})}
+                className="w-full p-2 border border-gray-300 rounded"
+                required
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 mb-2" htmlFor="frequency">Alert Frequency</label>
+              <select
+                id="frequency"
+                value={newAlert.frequency}
+                onChange={(e) => setNewAlert({...newAlert, frequency: e.target.value})}
+                className="w-full p-2 border border-gray-300 rounded"
+                required
+              >
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="realtime">Real-time</option>
+              </select>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setShowNewAlertForm(false)}
+                className="py-2 px-4 border border-gray-300 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"
+              >
+                Create Alert
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+      
+      {/* Loading state */}
+      {isLoading ? (
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+          <p className="mt-2 text-gray-600">Loading your alerts...</p>
+        </div>
+      ) : alerts.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-600">You don't have any job alerts yet. Create your first alert to get started.</p>
+        </div>
+      ) : (
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alert Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Keywords</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Frequency</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {alerts.map((alert) => (
+                <tr key={alert.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{alert.name}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-500">{alert.keywords}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500 capitalize">{alert.frequency}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span 
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        alert.active 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {alert.active ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleToggleAlert(alert.id)}
+                      className="text-blue-600 hover:text-blue-900 mr-3"
+                    >
+                      {alert.active ? 'Pause' : 'Activate'}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteAlert(alert.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      
+      <div className="mt-8 bg-blue-50 border border-blue-100 rounded-lg p-4">
+        <h3 className="font-medium text-blue-800 mb-2">About Premium Job Alerts</h3>
+        <p className="text-gray-700 mb-2">
+          As a PRO subscriber, you'll receive notifications for premium job listings that match your alert criteria.
+          Our system prioritizes high-quality opportunities and exclusive positions not available to free users.
+        </p>
+        <p className="text-gray-700">
+          You can create up to 10 custom alerts with different criteria and notification frequencies.
+        </p>
+      </div>
+    </div>
   );
 }

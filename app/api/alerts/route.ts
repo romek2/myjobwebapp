@@ -1,70 +1,58 @@
-// app/api/alerts/route.ts
+// app/api/job-alerts/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
 import { hasProAccessServer } from '@/lib/subscription';
 
-// GET handler to fetch all alerts for the current user
+// Main GET handler - fetches all alerts for a user
 export async function GET(request: NextRequest) {
-  console.log('GET request to /api/alerts');
   try {
-    // Authenticate the user
+    // Get user session
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Check if user has PRO access
+    // Check PRO access
     const hasPro = await hasProAccessServer(session.user.id);
     if (!hasPro) {
       return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
     }
     
-    // Initialize Supabase client
+    // Initialize Supabase
     const supabase = createServerSupabase();
     
-    // Fetch alerts for the current user
-    try {
-      console.log('Fetching alerts for user:', session.user.id);
-      const { data: alerts, error } = await supabase
-        .from('job_alerts')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Supabase error fetching alerts:', error);
-        return NextResponse.json(
-          { error: `Database error: ${error.message}` },
-          { status: 500 }
-        );
-      }
-      
-      console.log(`Found ${alerts?.length || 0} alerts`);
-      
-      // Format the alerts to match the expected client interface
-      const formattedAlerts = alerts?.map(alert => ({
-        id: alert.id,
-        name: alert.name,
-        keywords: alert.keywords,
-        frequency: alert.frequency,
-        active: alert.active,
-        userId: alert.user_id,
-        createdAt: alert.created_at,
-        updatedAt: alert.updated_at
-      })) || [];
-      
-      return NextResponse.json(formattedAlerts);
-    } catch (dbError: any) {
-      console.error('Error fetching alerts:', dbError);
+    // Fetch alerts
+    const { data, error } = await supabase
+      .from('job_alerts')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching alerts:', error);
       return NextResponse.json(
-        { error: `Error: ${dbError.message}` },
+        { error: `Database error: ${error.message}` },
         { status: 500 }
       );
     }
+    
+    // Transform data for frontend (snake_case to camelCase)
+    const formattedAlerts = data.map(alert => ({
+      id: alert.id,
+      name: alert.name,
+      keywords: alert.keywords,
+      frequency: alert.frequency,
+      active: alert.active,
+      userId: alert.user_id,
+      createdAt: alert.created_at,
+      updatedAt: alert.updated_at
+    }));
+    
+    return NextResponse.json(formattedAlerts);
   } catch (error) {
-    console.error('Error in GET /api/alerts:', error);
+    console.error('Unexpected error in GET /api/job-alerts:', error);
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }
@@ -72,26 +60,26 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST handler to create a new alert
+// POST handler - creates a new alert
 export async function POST(request: NextRequest) {
-  console.log('POST request to /api/alerts');
   try {
-    // Authenticate the user
+    // Get user session
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Check if user has PRO access
+    // Check PRO access
     const hasPro = await hasProAccessServer(session.user.id);
     if (!hasPro) {
       return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
     }
     
-    // Get request body
-    const { name, keywords, frequency } = await request.json();
+    // Parse request body
+    const body = await request.json();
+    const { name, keywords, frequency } = body;
     
-    // Validate required fields
+    // Validate inputs
     if (!name || !keywords || !frequency) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -99,7 +87,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Validate frequency value
+    // Validate frequency
     const validFrequencies = ['daily', 'weekly', 'realtime'];
     if (!validFrequencies.includes(frequency)) {
       return NextResponse.json(
@@ -108,10 +96,10 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Initialize Supabase client
+    // Initialize Supabase
     const supabase = createServerSupabase();
     
-    // Check if the user has reached the limit of 10 alerts
+    // Check alert limit (max 10)
     const { count, error: countError } = await supabase
       .from('job_alerts')
       .select('*', { count: 'exact' })
@@ -132,53 +120,42 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Create the new alert
-    try {
-      console.log('Creating new alert:', { name, keywords, frequency });
-      const { data: alert, error } = await supabase
-        .from('job_alerts')
-        .insert({
-          user_id: session.user.id,
-          name,
-          keywords,
-          frequency,
-          active: true
-        })
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Supabase error creating alert:', error);
-        return NextResponse.json(
-          { error: `Database error: ${error.message}`, code: error.code },
-          { status: 500 }
-        );
-      }
-      
-      console.log('Alert created:', alert);
-      
-      // Format the alert to match the expected client interface
-      const formattedAlert = {
-        id: alert.id,
-        name: alert.name,
-        keywords: alert.keywords,
-        frequency: alert.frequency,
-        active: alert.active,
-        userId: alert.user_id,
-        createdAt: alert.created_at,
-        updatedAt: alert.updated_at
-      };
-      
-      return NextResponse.json(formattedAlert);
-    } catch (dbError: any) {
-      console.error('Error creating alert:', dbError);
+    // Create new alert
+    const { data, error } = await supabase
+      .from('job_alerts')
+      .insert({
+        user_id: session.user.id,
+        name,
+        keywords,
+        frequency,
+        active: true
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating alert:', error);
       return NextResponse.json(
-        { error: `Error: ${dbError.message}` },
+        { error: `Database error: ${error.message}` },
         { status: 500 }
       );
     }
+    
+    // Format response
+    const formattedAlert = {
+      id: data.id,
+      name: data.name,
+      keywords: data.keywords,
+      frequency: data.frequency,
+      active: data.active,
+      userId: data.user_id,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at
+    };
+    
+    return NextResponse.json(formattedAlert);
   } catch (error) {
-    console.error('Error in POST /api/alerts:', error);
+    console.error('Unexpected error in POST /api/job-alerts:', error);
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }
