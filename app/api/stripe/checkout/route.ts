@@ -2,13 +2,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { createServerSupabase } from "@/lib/supabase";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2025-01-27.acacia", // Use your preferred API version
 });
-
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,12 +21,16 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Get user from database
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    // Get user from Supabase instead of Prisma
+    const supabase = createServerSupabase();
+    const { data: user, error: userError } = await supabase
+      .from('User')
+      .select('id, email, name, stripeCustomerId')
+      .eq('email', session.user.email)
+      .single();
     
-    if (!user) {
+    if (userError || !user) {
+      console.error("User not found:", userError);
       return NextResponse.json(
         { error: "User not found" },
         { status: 404 }
@@ -49,11 +52,15 @@ export async function POST(req: NextRequest) {
       
       customerId = customer.id;
       
-      // Update user with Stripe customer ID
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { stripeCustomerId: customerId },
-      });
+      // Update user with Stripe customer ID using Supabase
+      const { error: updateError } = await supabase
+        .from('User')
+        .update({ stripeCustomerId: customerId })
+        .eq('id', user.id);
+        
+      if (updateError) {
+        console.error("Error updating customer ID:", updateError);
+      }
     }
     
     // Create a checkout session
