@@ -1,11 +1,11 @@
 // app/api/test-alerts/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { createServerSupabase } from '@/lib/supabase';
 
 // GET handler to test database connection and fetch user info
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // Get the current user session
     const session = await getServerSession(authOptions);
@@ -17,30 +17,61 @@ export async function GET() {
       });
     }
     
+    // Initialize Supabase client
+    const supabase = createServerSupabase();
+    
     // Try to find the user in the database
     try {
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          subscriptionStatus: true
-        }
-      });
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('id, email, name, subscription_status')
+        .eq('id', session.user.id)
+        .single();
+      
+      if (error) {
+        return NextResponse.json({
+          message: "Error fetching user from database",
+          error: error.message,
+          authenticated: true,
+          userId: session.user.id
+        }, { status: 500 });
+      }
       
       // Get count of user's alerts
-      const alertCount = await prisma.jobAlert.count({
-        where: { userId: session.user.id }
-      });
+      const { count: alertCount, error: countError } = await supabase
+        .from('job_alerts')
+        .select('*', { count: 'exact' })
+        .eq('user_id', session.user.id);
+      
+      if (countError) {
+        return NextResponse.json({
+          message: "Error counting alerts",
+          error: countError.message,
+          user,
+          authenticated: true
+        }, { status: 500 });
+      }
+      
+      // Check table structure
+      const { data: tableInfo, error: tableError } = await supabase
+        .from('job_alerts')
+        .select('*')
+        .limit(1);
+      
+      let tableStructure = null;
+      if (tableInfo && tableInfo.length > 0) {
+        tableStructure = Object.keys(tableInfo[0]);
+      }
       
       return NextResponse.json({
         message: "Database connection successful",
         user,
         alertCount,
+        tableStructure,
         session: {
-          ...session,
-          // Don't expose any sensitive data that might be in the session
+          userId: session.user.id,
+          email: session.user.email,
+          name: session.user.name
         }
       });
     } catch (dbError: any) {
@@ -60,7 +91,7 @@ export async function GET() {
 }
 
 // POST handler to test creating a simple alert
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     // Get the session
     const session = await getServerSession(authOptions);
@@ -72,6 +103,9 @@ export async function POST(request: Request) {
       }, { status: 401 });
     }
     
+    // Initialize Supabase client
+    const supabase = createServerSupabase();
+    
     // Get the request body
     let body;
     try {
@@ -80,32 +114,35 @@ export async function POST(request: Request) {
       body = { name: "Test Alert", keywords: "test", frequency: "daily" };
     }
     
-    try {
-      // Try to create a simple alert
-      const alert = await prisma.jobAlert.create({
-        data: {
-          userId: session.user.id,
-          name: body.name || "Test Alert",
-          keywords: body.keywords || "test",
-          frequency: body.frequency || "daily",
-          active: true
-        }
-      });
-      
-      return NextResponse.json({
-        message: "Alert created successfully",
-        alert
-      });
-    } catch (dbError: any) {
+    // Try to create a simple alert
+    const { data: alert, error } = await supabase
+      .from('job_alerts')
+      .insert({
+        user_id: session.user.id,
+        name: body.name || "Test Alert",
+        keywords: body.keywords || "test",
+        frequency: body.frequency || "daily",
+        active: true
+      })
+      .select()
+      .single();
+    
+    if (error) {
       return NextResponse.json({
         message: "Error creating alert",
-        error: dbError.message,
-        code: dbError.code,
-        meta: dbError.meta,
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
         authenticated: true,
         userId: session.user.id
       }, { status: 500 });
     }
+    
+    return NextResponse.json({
+      message: "Alert created successfully",
+      alert
+    });
   } catch (error: any) {
     return NextResponse.json({
       message: "Unexpected error",

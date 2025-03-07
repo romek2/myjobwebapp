@@ -2,19 +2,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { createServerSupabase } from '@/lib/supabase';
 import { hasProAccessServer } from '@/lib/subscription';
 
 // Helper function to check if user can access this alert
 async function canAccessAlert(userId: string, alertId: string) {
   try {
-    const alert = await prisma.jobAlert.findUnique({
-      where: {
-        id: alertId
-      }
-    });
+    const supabase = createServerSupabase();
+    const { data: alert, error } = await supabase
+      .from('job_alerts')
+      .select('user_id')
+      .eq('id', alertId)
+      .single();
     
-    return alert?.userId === userId;
+    if (error) {
+      console.error('Error checking alert access:', error);
+      return false;
+    }
+    
+    return alert?.user_id === userId;
   } catch (error) {
     console.error('Error checking alert access:', error);
     return false;
@@ -60,6 +66,9 @@ export async function PATCH(
       );
     }
     
+    // Initialize Supabase client
+    const supabase = createServerSupabase();
+    
     // Prepare update data
     const updateData: any = {};
     if (body.active !== undefined) updateData.active = body.active;
@@ -70,15 +79,35 @@ export async function PATCH(
     console.log('Updating alert with data:', updateData);
     
     // Update the alert
-    const updatedAlert = await prisma.jobAlert.update({
-      where: {
-        id: alertId
-      },
-      data: updateData
-    });
+    const { data: updatedAlert, error } = await supabase
+      .from('job_alerts')
+      .update(updateData)
+      .eq('id', alertId)
+      .select()
+      .single();
     
-    console.log('Alert updated:', updatedAlert);
-    return NextResponse.json(updatedAlert);
+    if (error) {
+      console.error('Error updating alert:', error);
+      return NextResponse.json(
+        { error: `Database error: ${error.message}` },
+        { status: 500 }
+      );
+    }
+    
+    // Format the alert to match the expected client interface
+    const formattedAlert = {
+      id: updatedAlert.id,
+      name: updatedAlert.name,
+      keywords: updatedAlert.keywords,
+      frequency: updatedAlert.frequency,
+      active: updatedAlert.active,
+      userId: updatedAlert.user_id,
+      createdAt: updatedAlert.created_at,
+      updatedAt: updatedAlert.updated_at
+    };
+    
+    console.log('Alert updated:', formattedAlert);
+    return NextResponse.json(formattedAlert);
   } catch (error: any) {
     console.error(`Error in PATCH /api/alerts/${params?.id}:`, error);
     return NextResponse.json(
@@ -115,12 +144,22 @@ export async function DELETE(
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
     
+    // Initialize Supabase client
+    const supabase = createServerSupabase();
+    
     // Delete the alert
-    await prisma.jobAlert.delete({
-      where: {
-        id: alertId
-      }
-    });
+    const { error } = await supabase
+      .from('job_alerts')
+      .delete()
+      .eq('id', alertId);
+    
+    if (error) {
+      console.error('Error deleting alert:', error);
+      return NextResponse.json(
+        { error: `Database error: ${error.message}` },
+        { status: 500 }
+      );
+    }
     
     console.log('Alert deleted successfully');
     return NextResponse.json({ success: true });

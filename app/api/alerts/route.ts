@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { createServerSupabase } from '@/lib/supabase';
 import { hasProAccessServer } from '@/lib/subscription';
 
 // GET handler to fetch all alerts for the current user
@@ -21,24 +21,45 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
     }
     
+    // Initialize Supabase client
+    const supabase = createServerSupabase();
+    
     // Fetch alerts for the current user
     try {
       console.log('Fetching alerts for user:', session.user.id);
-      const alerts = await prisma.jobAlert.findMany({
-        where: {
-          userId: session.user.id
-        },
-        orderBy: {
-          createdAt: 'desc'
-        }
-      });
+      const { data: alerts, error } = await supabase
+        .from('job_alerts')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
       
-      console.log(`Found ${alerts.length} alerts`);
-      return NextResponse.json(alerts);
+      if (error) {
+        console.error('Supabase error fetching alerts:', error);
+        return NextResponse.json(
+          { error: `Database error: ${error.message}` },
+          { status: 500 }
+        );
+      }
+      
+      console.log(`Found ${alerts?.length || 0} alerts`);
+      
+      // Format the alerts to match the expected client interface
+      const formattedAlerts = alerts?.map(alert => ({
+        id: alert.id,
+        name: alert.name,
+        keywords: alert.keywords,
+        frequency: alert.frequency,
+        active: alert.active,
+        userId: alert.user_id,
+        createdAt: alert.created_at,
+        updatedAt: alert.updated_at
+      })) || [];
+      
+      return NextResponse.json(formattedAlerts);
     } catch (dbError: any) {
-      console.error('Database error fetching alerts:', dbError);
+      console.error('Error fetching alerts:', dbError);
       return NextResponse.json(
-        { error: `Database error: ${dbError.message}` },
+        { error: `Error: ${dbError.message}` },
         { status: 500 }
       );
     }
@@ -87,14 +108,24 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Check if the user has reached the limit of 10 alerts
-    const alertCount = await prisma.jobAlert.count({
-      where: {
-        userId: session.user.id
-      }
-    });
+    // Initialize Supabase client
+    const supabase = createServerSupabase();
     
-    if (alertCount >= 10) {
+    // Check if the user has reached the limit of 10 alerts
+    const { count, error: countError } = await supabase
+      .from('job_alerts')
+      .select('*', { count: 'exact' })
+      .eq('user_id', session.user.id);
+    
+    if (countError) {
+      console.error('Error counting alerts:', countError);
+      return NextResponse.json(
+        { error: 'Failed to check alert limit' },
+        { status: 500 }
+      );
+    }
+    
+    if (count !== null && count >= 10) {
       return NextResponse.json(
         { error: 'You have reached the maximum limit of 10 job alerts' },
         { status: 400 }
@@ -104,22 +135,45 @@ export async function POST(request: NextRequest) {
     // Create the new alert
     try {
       console.log('Creating new alert:', { name, keywords, frequency });
-      const alert = await prisma.jobAlert.create({
-        data: {
-          userId: session.user.id,
+      const { data: alert, error } = await supabase
+        .from('job_alerts')
+        .insert({
+          user_id: session.user.id,
           name,
           keywords,
           frequency,
           active: true
-        }
-      });
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Supabase error creating alert:', error);
+        return NextResponse.json(
+          { error: `Database error: ${error.message}`, code: error.code },
+          { status: 500 }
+        );
+      }
       
       console.log('Alert created:', alert);
-      return NextResponse.json(alert);
+      
+      // Format the alert to match the expected client interface
+      const formattedAlert = {
+        id: alert.id,
+        name: alert.name,
+        keywords: alert.keywords,
+        frequency: alert.frequency,
+        active: alert.active,
+        userId: alert.user_id,
+        createdAt: alert.created_at,
+        updatedAt: alert.updated_at
+      };
+      
+      return NextResponse.json(formattedAlert);
     } catch (dbError: any) {
-      console.error('Database error creating alert:', dbError);
+      console.error('Error creating alert:', dbError);
       return NextResponse.json(
-        { error: `Database error: ${dbError.message}`, code: dbError.code },
+        { error: `Error: ${dbError.message}` },
         { status: 500 }
       );
     }
