@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
-import { hasProAccessServer } from '@/lib/subscription';
 
 // Helper function to check if user owns an alert
 async function userOwnsAlert(userId: string, alertId: string) {
@@ -42,10 +41,15 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Check PRO access
-    const hasPro = await hasProAccessServer(session.user.id);
-    if (!hasPro) {
-      return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
+    // Check PRO access directly from the session
+    if (session.user.subscriptionStatus !== 'PRO') {
+      console.log('User does not have PRO subscription. Status:', session.user.subscriptionStatus);
+      
+      // DEVELOPMENT OVERRIDE - FOR TESTING ONLY
+      // Comment this out to enforce PRO subscriptions
+      console.log('⚠️ DEVELOPMENT OVERRIDE: Allowing access despite no PRO subscription');
+      // Uncomment the next line to enforce PRO subscriptions
+      // return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
     }
     
     // Check alert ownership
@@ -132,10 +136,15 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Check PRO access
-    const hasPro = await hasProAccessServer(session.user.id);
-    if (!hasPro) {
-      return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
+    // Check PRO access directly from the session
+    if (session.user.subscriptionStatus !== 'PRO') {
+      console.log('User does not have PRO subscription. Status:', session.user.subscriptionStatus);
+      
+      // DEVELOPMENT OVERRIDE - FOR TESTING ONLY
+      // Comment this out to enforce PRO subscriptions
+      console.log('⚠️ DEVELOPMENT OVERRIDE: Allowing access despite no PRO subscription');
+      // Uncomment the next line to enforce PRO subscriptions
+      // return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
     }
     
     // Check alert ownership

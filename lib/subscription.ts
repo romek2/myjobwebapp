@@ -1,74 +1,66 @@
 // lib/subscription.ts
 import { Session } from "next-auth";
-import { prisma } from "./prisma";
 import { useSession } from "next-auth/react";
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from "./auth";
 
 /**
  * Check if a user has PRO access based on session data
  * For client-side components using useSession()
  */
-export function hasProAccess(session?: Session | null): boolean {
+export function useProAccess(): boolean {
+  const { data: session } = useSession();
+  
+  // No session means no PRO access
   if (!session?.user) return false;
   
-  // Emergency override in development
+  // Emergency override for development
   if (process.env.NEXT_PUBLIC_DISABLE_PRO_RESTRICTIONS === "true") {
     return true;
   }
   
-  // Check subscription status from session
+  // Check the user's subscription status from the session
   return session.user.subscriptionStatus === "PRO";
 }
 
 /**
  * Server-side function to check if a user has PRO access
- * For server components and API routes
+ * Updated to use JWT session data instead of database query
  */
-export async function hasProAccessServer(userIdOrEmail: string): Promise<boolean> {
+export async function hasProAccessServer(userId: string): Promise<boolean> {
   try {
-    // Emergency override in development
+    // Emergency override for development
     if (process.env.DISABLE_PRO_RESTRICTIONS === "true") {
+      console.log("PRO restrictions disabled in dev mode");
       return true;
     }
     
-    // Find user by ID or email
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { id: userIdOrEmail },
-          { email: userIdOrEmail }
-        ]
-      },
-      select: {
-        subscriptionStatus: true,
-        subscriptionPeriodEnd: true,
-        overrideAccess: true
-      }
-    });
+    // Get the current user's session
+    const session = await getServerSession(authOptions);
     
-    if (!user) return false;
+    // DEVELOPMENT OVERRIDE - FOR TESTING ONLY
+    // Uncomment this line if you want to bypass subscription checks during development
+    // return true;
     
-    // Check for manual override
-    if (user.overrideAccess) return true;
-    
-    // Check subscription status
-    if (user.subscriptionStatus !== "PRO") return false;
-    
-    // Check if subscription is still valid
-    if (user.subscriptionPeriodEnd && new Date() > user.subscriptionPeriodEnd) {
+    // No session means no PRO access
+    if (!session?.user) {
+      console.log("No user session found");
       return false;
     }
     
-    return true;
+    // Check if this is the same user
+    if (session.user.id !== userId) {
+      console.log(`Session user ${session.user.id} doesn't match requested user ${userId}`);
+      return false;
+    }
+    
+    // Use the subscription status from the JWT session
+    const isPro = session.user.subscriptionStatus === "PRO";
+    console.log(`User has PRO status: ${isPro}`);
+    
+    return isPro;
   } catch (error) {
-    console.error("Error checking pro access:", error);
+    console.error("Error checking PRO access:", error);
     return false; // Fail closed (no access) on errors
   }
-}
-
-/**
- * Hook to check if current user has PRO access
- */
-export function useProAccess(): boolean {
-  const { data: session } = useSession();
-  return hasProAccess(session);
 }

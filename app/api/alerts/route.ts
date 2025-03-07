@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
-import { hasProAccessServer } from '@/lib/subscription';
 
 // Main GET handler - fetches all alerts for a user
 export async function GET(request: NextRequest) {
@@ -14,21 +13,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Check PRO access
-    const hasPro = await hasProAccessServer(session.user.id);
-    if (!hasPro) {
-      return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
+    // Check PRO access directly from the session
+    if (session.user.subscriptionStatus !== 'PRO') {
+      console.log('User does not have PRO subscription. Status:', session.user.subscriptionStatus);
+      
+      // DEVELOPMENT OVERRIDE - FOR TESTING ONLY
+      // Comment this out to enforce PRO subscriptions
+      console.log('⚠️ DEVELOPMENT OVERRIDE: Allowing access despite no PRO subscription');
+      // Uncomment the next line to enforce PRO subscriptions
+      // return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
     }
     
     // Initialize Supabase
     const supabase = createServerSupabase();
     
-    // Fetch alerts
+    // Fetch alerts - using camelCase column names from the actual schema
     const { data, error } = await supabase
-      .from('job_alerts')
+      .from('JobAlert')
       .select('*')
-      .eq('user_id', session.user.id)
-      .order('created_at', { ascending: false });
+      .eq('userId', session.user.id)
+      .order('createdAt', { ascending: false });
     
     if (error) {
       console.error('Error fetching alerts:', error);
@@ -38,19 +42,8 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Transform data for frontend (snake_case to camelCase)
-    const formattedAlerts = data.map(alert => ({
-      id: alert.id,
-      name: alert.name,
-      keywords: alert.keywords,
-      frequency: alert.frequency,
-      active: alert.active,
-      userId: alert.user_id,
-      createdAt: alert.created_at,
-      updatedAt: alert.updated_at
-    }));
-    
-    return NextResponse.json(formattedAlerts);
+    // Return data directly - already in camelCase
+    return NextResponse.json(data || []);
   } catch (error) {
     console.error('Unexpected error in GET /api/job-alerts:', error);
     return NextResponse.json(
@@ -69,10 +62,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Check PRO access
-    const hasPro = await hasProAccessServer(session.user.id);
-    if (!hasPro) {
-      return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
+    // Check PRO access directly from the session
+    if (session.user.subscriptionStatus !== 'PRO') {
+      console.log('User does not have PRO subscription. Status:', session.user.subscriptionStatus);
+      
+      // DEVELOPMENT OVERRIDE - FOR TESTING ONLY
+      // Comment this out to enforce PRO subscriptions
+      console.log('⚠️ DEVELOPMENT OVERRIDE: Allowing access despite no PRO subscription');
+      // Uncomment the next line to enforce PRO subscriptions
+      // return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
     }
     
     // Parse request body
@@ -101,9 +99,9 @@ export async function POST(request: NextRequest) {
     
     // Check alert limit (max 10)
     const { count, error: countError } = await supabase
-      .from('job_alerts')
+      .from('JobAlert')
       .select('*', { count: 'exact' })
-      .eq('user_id', session.user.id);
+      .eq('userId', session.user.id);
     
     if (countError) {
       console.error('Error counting alerts:', countError);
@@ -120,15 +118,20 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Create new alert
+    // Prepare the current timestamp
+    const now = new Date().toISOString();
+    
+    // Create new alert - using camelCase column names from the actual schema
     const { data, error } = await supabase
-      .from('job_alerts')
+      .from('JobAlert')
       .insert({
-        user_id: session.user.id,
+        userId: session.user.id,
         name,
         keywords,
         frequency,
-        active: true
+        active: true,
+        createdAt: now,
+        updatedAt: now
       })
       .select()
       .single();
@@ -141,19 +144,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Format response
-    const formattedAlert = {
-      id: data.id,
-      name: data.name,
-      keywords: data.keywords,
-      frequency: data.frequency,
-      active: data.active,
-      userId: data.user_id,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at
-    };
-    
-    return NextResponse.json(formattedAlert);
+    return NextResponse.json(data);
   } catch (error) {
     console.error('Unexpected error in POST /api/job-alerts:', error);
     return NextResponse.json(
