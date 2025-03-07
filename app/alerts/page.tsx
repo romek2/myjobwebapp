@@ -41,10 +41,13 @@ export default function JobAlertsPage() {
         const response = await fetch('/api/alerts');
         
         if (!response.ok) {
-          throw new Error('Failed to fetch alerts');
+          const errorData = await response.json();
+          console.error('Response error:', errorData);
+          throw new Error(errorData.error || 'Failed to fetch alerts');
         }
         
         const data = await response.json();
+        console.log('Fetched alerts:', data);
         setAlerts(data);
       } catch (err) {
         console.error('Error fetching alerts:', err);
@@ -63,7 +66,10 @@ export default function JobAlertsPage() {
     const alertToUpdate = alerts.find(alert => alert.id === id);
     if (!alertToUpdate) return;
     
+    setError(null); // Clear any previous errors
+    
     try {
+      console.log(`Toggling alert ${id} from ${alertToUpdate.active} to ${!alertToUpdate.active}`);
       const response = await fetch(`/api/alerts/${id}`, {
         method: 'PATCH',
         headers: {
@@ -75,42 +81,56 @@ export default function JobAlertsPage() {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to update alert');
+        const errorData = await response.json();
+        console.error('Response error:', errorData);
+        throw new Error(errorData.error || 'Failed to update alert');
       }
+      
+      const updatedAlert = await response.json();
+      console.log('Updated alert:', updatedAlert);
       
       // Update local state
       setAlerts(alerts.map(alert => 
         alert.id === id ? { ...alert, active: !alert.active } : alert
       ));
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error updating alert status:', err);
-      setError('Failed to update alert status. Please try again.');
+      setError(`Failed to update alert: ${err.message || 'Please try again.'}`);
     }
   };
 
   const deleteAlert = async (id: string) => {
     if (!isPro) return;
     
+    setError(null); // Clear any previous errors
+    
     try {
+      console.log(`Deleting alert ${id}`);
       const response = await fetch(`/api/alerts/${id}`, {
         method: 'DELETE'
       });
       
       if (!response.ok) {
-        throw new Error('Failed to delete alert');
+        const errorData = await response.json();
+        console.error('Response error:', errorData);
+        throw new Error(errorData.error || 'Failed to delete alert');
       }
+      
+      console.log(`Alert ${id} deleted successfully`);
       
       // Update local state
       setAlerts(alerts.filter(alert => alert.id !== id));
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting alert:', err);
-      setError('Failed to delete alert. Please try again.');
+      setError(`Failed to delete alert: ${err.message || 'Please try again.'}`);
     }
   };
 
   const addNewAlert = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isPro) return;
+    
+    setError(null); // Clear any previous errors
     
     try {
       const response = await fetch('/api/alerts', {
@@ -122,18 +142,21 @@ export default function JobAlertsPage() {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to create alert');
+        const errorData = await response.json();
+        console.error('Response error:', errorData);
+        throw new Error(errorData.error || 'Failed to create alert');
       }
       
       const createdAlert = await response.json();
+      console.log('Created alert:', createdAlert);
       
       // Update local state
       setAlerts([...alerts, createdAlert]);
       setNewAlert({ name: '', keywords: '', frequency: 'daily' });
       setShowNewAlertForm(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating alert:', err);
-      setError('Failed to create alert. Please try again.');
+      setError(`Failed to create alert: ${err.message || 'Please try again.'}`);
     }
   };
 
@@ -208,16 +231,71 @@ export default function JobAlertsPage() {
     );
   }
 
+  // Test function to diagnose issues
+  const runDiagnostics = async () => {
+    setError(null);
+    try {
+      console.log('Running API diagnostics...');
+      const response = await fetch('/api/test-alerts');
+      const data = await response.json();
+      console.log('API Diagnostics:', data);
+      alert('Check console for diagnostics results');
+    } catch (err) {
+      console.error('Diagnostics error:', err);
+      setError('Diagnostics failed. Check console for details.');
+    }
+  };
+  
+  // Test creating an alert directly
+  const testCreateAlert = async () => {
+    setError(null);
+    try {
+      console.log('Testing alert creation...');
+      const response = await fetch('/api/test-alerts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Test Alert', keywords: 'test', frequency: 'daily' })
+      });
+      const data = await response.json();
+      console.log('Test alert creation result:', data);
+      
+      if (response.ok) {
+        alert('Test alert created! Check console for details.');
+      } else {
+        setError(`Test failed: ${data.error || data.message}`);
+      }
+    } catch (err) {
+      console.error('Test create error:', err);
+      setError('Test create failed. Check console for details.');
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Job Alerts</h1>
-        <button 
-          onClick={() => setShowNewAlertForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"
-        >
-          Create New Alert
-        </button>
+        <div className="space-x-2">
+          <button
+            onClick={runDiagnostics}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg"
+            title="Run diagnostics to check API and database connection"
+          >
+            Diagnostics
+          </button>
+          <button
+            onClick={testCreateAlert}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg"
+            title="Test creating an alert"
+          >
+            Test Create
+          </button>
+          <button 
+            onClick={() => setShowNewAlertForm(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"
+          >
+            Create New Alert
+          </button>
+        </div>
       </div>
       
       {/* PRO badge */}
