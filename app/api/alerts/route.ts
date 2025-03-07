@@ -1,12 +1,11 @@
-// app/api/alerts/route.ts
+// app/api/alerts/route.js
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
-import { hasProAccessServer } from '@/lib/subscription';
 
 // GET handler to fetch all alerts for the current user
-export async function GET() {
+export async function GET(request: Request) {
   try {
     // Authenticate the user
     const session = await getServerSession(authOptions);
@@ -14,14 +13,22 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Check if user has PRO access
-    const hasPro = await hasProAccessServer(session.user.id);
-    if (!hasPro) {
-      return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
-    }
-    
     // Initialize Supabase client
     const supabase = createServerSupabase();
+    
+    // Check if the user has PRO access
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('subscription_status')
+      .eq('id', session.user.id)
+      .single();
+    
+    if (userError || !user || user.subscription_status !== 'PRO') {
+      return NextResponse.json(
+        { error: 'PRO subscription required' },
+        { status: 403 }
+      );
+    }
     
     // Fetch alerts for the current user
     const { data: alerts, error } = await supabase
@@ -57,14 +64,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Check if user has PRO access
-    const hasPro = await hasProAccessServer(session.user.id);
-    if (!hasPro) {
-      return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
-    }
-    
     // Get request body
-    const { name, keywords, frequency } = await request.json();
+    const data = await request.json();
+    const { name, keywords, frequency } = data;
+    
+    console.log('Creating alert:', { name, keywords, frequency });
     
     // Validate required fields
     if (!name || !keywords || !frequency) {
@@ -85,6 +89,20 @@ export async function POST(request: Request) {
     
     // Initialize Supabase client
     const supabase = createServerSupabase();
+    
+    // Check if the user has PRO access
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('subscription_status')
+      .eq('id', session.user.id)
+      .single();
+    
+    if (userError || !user || user.subscription_status !== 'PRO') {
+      return NextResponse.json(
+        { error: 'PRO subscription required' },
+        { status: 403 }
+      );
+    }
     
     // Check if the user has reached the limit of 10 alerts
     const { count, error: countError } = await supabase
@@ -128,6 +146,7 @@ export async function POST(request: Request) {
       );
     }
     
+    console.log('Alert created successfully:', alert);
     return NextResponse.json(alert);
   } catch (error) {
     console.error('Error in POST /api/alerts:', error);

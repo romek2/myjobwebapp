@@ -1,43 +1,140 @@
 'use client';
 
-// app/alerts/page.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useProAccess } from '@/lib/subscription';
 import Link from 'next/link';
 
+interface Alert {
+  id: string;
+  name: string;
+  keywords: string;
+  frequency: string;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export default function JobAlertsPage() {
   const { data: session } = useSession();
   const isPro = useProAccess();
-  const [alerts, setAlerts] = useState([
-    { id: 1, name: 'Frontend Developer', keywords: 'React, TypeScript, Next.js', frequency: 'daily', active: true },
-    { id: 2, name: 'Backend Developer', keywords: 'Node.js, Express, PostgreSQL', frequency: 'weekly', active: false },
-  ]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showNewAlertForm, setShowNewAlertForm] = useState(false);
-  const [newAlert, setNewAlert] = useState({ name: '', keywords: '', frequency: 'daily' });
+  const [newAlert, setNewAlert] = useState<{ name: string; keywords: string; frequency: string }>({ 
+    name: '', 
+    keywords: '', 
+    frequency: 'daily' 
+  });
 
-  const toggleAlert = (id: number) => {
+  // Fetch alerts when component mounts
+  useEffect(() => {
+    async function fetchAlerts() {
+      if (!session?.user || !isPro) {
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/alerts');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch alerts');
+        }
+        
+        const data = await response.json();
+        setAlerts(data);
+      } catch (err) {
+        console.error('Error fetching alerts:', err);
+        setError('Failed to load your job alerts. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchAlerts();
+  }, [session, isPro]);
+
+  const toggleAlert = async (id: string) => {
     if (!isPro) return;
     
-    setAlerts(alerts.map(alert => 
-      alert.id === id ? { ...alert, active: !alert.active } : alert
-    ));
+    const alertToUpdate = alerts.find(alert => alert.id === id);
+    if (!alertToUpdate) return;
+    
+    try {
+      const response = await fetch(`/api/alerts/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          active: !alertToUpdate.active 
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update alert');
+      }
+      
+      // Update local state
+      setAlerts(alerts.map(alert => 
+        alert.id === id ? { ...alert, active: !alert.active } : alert
+      ));
+    } catch (err) {
+      console.error('Error updating alert status:', err);
+      setError('Failed to update alert status. Please try again.');
+    }
   };
 
-  const deleteAlert = (id: number) => {
+  const deleteAlert = async (id: string) => {
     if (!isPro) return;
     
-    setAlerts(alerts.filter(alert => alert.id !== id));
+    try {
+      const response = await fetch(`/api/alerts/${id}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete alert');
+      }
+      
+      // Update local state
+      setAlerts(alerts.filter(alert => alert.id !== id));
+    } catch (err) {
+      console.error('Error deleting alert:', err);
+      setError('Failed to delete alert. Please try again.');
+    }
   };
 
-  const addNewAlert = (e: React.FormEvent) => {
+  const addNewAlert = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isPro) return;
     
-    const id = Math.max(0, ...alerts.map(a => a.id)) + 1;
-    setAlerts([...alerts, { id, active: true, ...newAlert }]);
-    setNewAlert({ name: '', keywords: '', frequency: 'daily' });
-    setShowNewAlertForm(false);
+    try {
+      const response = await fetch('/api/alerts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newAlert)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create alert');
+      }
+      
+      const createdAlert = await response.json();
+      
+      // Update local state
+      setAlerts([...alerts, createdAlert]);
+      setNewAlert({ name: '', keywords: '', frequency: 'daily' });
+      setShowNewAlertForm(false);
+    } catch (err) {
+      console.error('Error creating alert:', err);
+      setError('Failed to create alert. Please try again.');
+    }
   };
 
   if (!session) {
@@ -131,6 +228,13 @@ export default function JobAlertsPage() {
         PRO Feature Enabled
       </div>
       
+      {/* Error message */}
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
+      
       {showNewAlertForm && (
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Create New Alert</h2>
@@ -190,7 +294,12 @@ export default function JobAlertsPage() {
         </div>
       )}
       
-      {alerts.length === 0 ? (
+      {isLoading ? (
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+          <p className="mt-2 text-gray-600">Loading your alerts...</p>
+        </div>
+      ) : alerts.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-600">You don't have any job alerts yet. Create your first alert to get started.</p>
         </div>
