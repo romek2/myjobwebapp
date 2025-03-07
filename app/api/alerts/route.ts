@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
+import { v4 as uuidv4 } from 'uuid'; // You may need to install this package
 
 // Main GET handler - fetches all alerts for a user
 export async function GET(request: NextRequest) {
@@ -18,7 +19,6 @@ export async function GET(request: NextRequest) {
       console.log('User does not have PRO subscription. Status:', session.user.subscriptionStatus);
       
       // DEVELOPMENT OVERRIDE - FOR TESTING ONLY
-      // Comment this out to enforce PRO subscriptions
       console.log('⚠️ DEVELOPMENT OVERRIDE: Allowing access despite no PRO subscription');
       // Uncomment the next line to enforce PRO subscriptions
       // return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
@@ -67,7 +67,6 @@ export async function POST(request: NextRequest) {
       console.log('User does not have PRO subscription. Status:', session.user.subscriptionStatus);
       
       // DEVELOPMENT OVERRIDE - FOR TESTING ONLY
-      // Comment this out to enforce PRO subscriptions
       console.log('⚠️ DEVELOPMENT OVERRIDE: Allowing access despite no PRO subscription');
       // Uncomment the next line to enforce PRO subscriptions
       // return NextResponse.json({ error: 'PRO subscription required' }, { status: 403 });
@@ -121,17 +120,21 @@ export async function POST(request: NextRequest) {
     // Prepare the current timestamp
     const now = new Date().toISOString();
     
-    // Create new alert - using camelCase column names from the actual schema
+    // Generate a UUID for the ID field if your database doesn't auto-generate
+    const id = uuidv4();
+    
+    // Create new alert with ALL required fields
     const { data, error } = await supabase
       .from('JobAlert')
       .insert({
-        userId: session.user.id,
-        name,
-        keywords,
-        frequency,
-        active: true,
-        createdAt: now,
-        updatedAt: now
+        id: id,                   // Generate a UUID for the ID
+        userId: session.user.id,  // From session
+        name: name,               // From form
+        keywords: keywords,       // From form
+        frequency: frequency,     // From form
+        active: true,             // Default to active
+        createdAt: now,           // Current timestamp
+        updatedAt: now            // Current timestamp
       })
       .select()
       .single();
