@@ -88,7 +88,7 @@ export default function ScheduledEmailTestPage() {
               clicking the button. In production, you would use a more robust solution like Vercel Cron Jobs.
             </p>
           </div>
-          
+            
           <button
             onClick={scheduleEmail}
             disabled={isLoading}
