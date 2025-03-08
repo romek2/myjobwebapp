@@ -4,45 +4,34 @@ import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Bell, CheckCircle2, MailIcon, Send } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, Cog, MailIcon, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useProAccess } from '@/lib/subscription';
 import Link from 'next/link';
 
-type TestResult = {
+type ProcessResult = {
   success?: boolean;
-  timestamp?: string;
-  mode?: string;
+  message?: string;
   results?: {
-    alertsProcessed: number;
-    matchesFound: number;
-    emailsSent: number;
-    emailsFailed: number;
-    details: Array<{
-      alertId: string;
-      alertName: string;
-      status: string;
-      userEmail?: string;
-      matchesFound?: number;
-      jobIds?: string[];
-      reason?: string;
-      error?: string;
-    }>;
+    processed: number;
+    matched: number;
+    emailed: number;
+    errors: number;
   };
   error?: string;
   details?: string;
-  message?: string;
 } | null;
 
-export default function TestJobAlertsPage() {
+export default function AdminProcessAlertsPage() {
   const { data: session } = useSession();
   const isPro = useProAccess();
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<TestResult>(null);
+  const [result, setResult] = useState<ProcessResult>(null);
+  const [jobId, setJobId] = useState('');
 
-  const testJobAlerts = async () => {
+  const processAlerts = async () => {
     if (!session?.user?.email) {
-      setResult({ error: 'You must be signed in to test job alerts' });
+      setResult({ error: 'You must be signed in to use this feature' });
       return;
     }
 
@@ -50,15 +39,20 @@ export default function TestJobAlertsPage() {
       setIsLoading(true);
       setResult(null);
       
-      // Set up the secret for the cron job
-      const response = await fetch('/api/debug/test-job-matches', {
+      // Prepare the request body
+      const requestBody: any = {};
+      
+      // Only add jobIds if a specific one is provided
+      if (jobId.trim()) {
+        requestBody.jobIds = [jobId.trim()];
+      }
+      
+      const response = await fetch('/api/admin/process-alerts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          testMode: true
-        })
+        body: JSON.stringify(requestBody)
       });
       
       const data = await response.json();
@@ -67,7 +61,7 @@ export default function TestJobAlertsPage() {
         setResult(data);
       } else {
         setResult({ 
-          error: data.error || 'Failed to test job alerts', 
+          error: data.error || 'Failed to process job alerts', 
           details: data.details || 'No additional details available' 
         });
       }
@@ -85,9 +79,9 @@ export default function TestJobAlertsPage() {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="text-center py-12">
-          <Bell className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-          <h1 className="text-2xl font-bold mb-4">Sign in to test job alerts</h1>
-          <p className="mb-6 text-gray-600">You need to be signed in to test job alerts.</p>
+          <Cog className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+          <h1 className="text-2xl font-bold mb-4">Admin Access Required</h1>
+          <p className="mb-6 text-gray-600">Please sign in to access admin tools.</p>
           <Link href="/api/auth/signin" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg">
             Sign In
           </Link>
@@ -96,20 +90,28 @@ export default function TestJobAlertsPage() {
     );
   }
 
+  // Check if user has admin access (in this case, we're using PRO status as a proxy)
   if (!isPro) {
     return (
       <div className="max-w-4xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">Test Job Alerts</h1>
+        <h1 className="text-3xl font-bold mb-6">Admin: Process Job Alerts</h1>
         
-        <Card className="border border-gray-200 shadow-sm mb-6">
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            You don't have permission to access this page. PRO subscription required.
+          </AlertDescription>
+        </Alert>
+        
+        <Card>
           <CardContent className="p-8 text-center">
             <div className="mb-4">
               <span className="inline-block p-3 rounded-full bg-yellow-100 text-yellow-800 mb-4">
-                <Bell className="h-6 w-6" />
+                <Cog className="h-6 w-6" />
               </span>
-              <h2 className="text-2xl font-bold mb-2">PRO Feature Required</h2>
+              <h2 className="text-2xl font-bold mb-2">Admin Access Required</h2>
               <p className="text-gray-600 mb-6">
-                Testing job alerts requires a PRO subscription.
+                This is an admin-only feature which requires a PRO subscription.
               </p>
             </div>
             
@@ -124,11 +126,11 @@ export default function TestJobAlertsPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Test Job Alerts</h1>
+      <h1 className="text-3xl font-bold mb-6">Admin: Process Job Alerts</h1>
       
       <div className="mb-6 inline-flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
         <CheckCircle2 className="h-4 w-4 mr-1" />
-        PRO Feature Enabled
+        Admin Access Enabled
       </div>
       
       {result?.error && (
@@ -147,131 +149,79 @@ export default function TestJobAlertsPage() {
       
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Test Job Alert Matching</CardTitle>
+          <CardTitle>Manual Job Alert Processing</CardTitle>
           <CardDescription>
-            Process your alerts against recent jobs and send matching emails
+            Process job alerts against recent jobs or a specific job ID
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            <div className="bg-yellow-50 border border-yellow-100 p-4 rounded-md mb-6">
-              <p className="text-sm text-gray-700">
-                <strong>Note:</strong> This will process your active job alerts against recent jobs and send 
-                test emails if there are matches. The email will include "[TEST]" in the subject line.
+            <div>
+              <label htmlFor="jobId" className="block text-sm font-medium text-gray-700 mb-1">
+                Specific Job ID (Optional)
+              </label>
+              <div className="flex space-x-4">
+                <input
+                  type="text"
+                  id="jobId"
+                  value={jobId}
+                  onChange={(e) => setJobId(e.target.value)}
+                  placeholder="Leave empty to process all recent jobs"
+                  className="flex-1 p-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <p className="mt-1 text-sm text-gray-500">
+                If you leave this empty, all jobs from the last 24 hours will be processed
               </p>
             </div>
             
-            <div className="bg-gray-50 p-4 rounded-md mb-6">
-              <h3 className="font-medium mb-2">Prerequisites:</h3>
-              <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700">
-                <li>You should have at least one active job alert set up</li>
-                <li>There should be recent jobs in the system (from the last 24 hours)</li>
-                <li>Your job alert keywords should match some of the recent jobs</li>
-              </ul>
+            <div className="bg-blue-50 border border-blue-100 p-4 rounded-md mb-6">
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> This tool processes job alerts for matching jobs and sends 
+                real emails to users. Only use this when necessary.
+              </p>
             </div>
             
             <Button
-              onClick={testJobAlerts}
+              onClick={processAlerts}
               disabled={isLoading}
-              className="bg-blue-600 hover:bg-blue-700 text-white w-full md:w-auto"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               {isLoading ? 
-                'Processing...' : 
-                <><MailIcon className="mr-2 h-4 w-4" /> Test Job Matching & Alerts</>
+                <><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Processing...</> : 
+                <><MailIcon className="mr-2 h-4 w-4" /> Process Job Alerts</>
               }
             </Button>
             
-            {result && result.success && result.results && (
-              <div className="bg-green-50 border border-green-200 rounded-md p-4">
+            {result?.success && result.results && (
+              <div className="bg-green-50 border border-green-200 rounded-md p-4 mt-4">
                 <h3 className="font-medium text-green-800 mb-3 flex items-center">
                   <CheckCircle2 className="h-5 w-5 mr-2" />
-                  Test Completed Successfully
+                  Processing Complete
                 </h3>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   <div className="bg-white p-3 rounded border border-gray-200">
-                    <p className="text-xs text-gray-500">Alerts Processed</p>
-                    <p className="text-xl font-semibold">{result.results.alertsProcessed}</p>
+                    <p className="text-xs text-gray-500">Jobs Processed</p>
+                    <p className="text-xl font-semibold">{result.results.processed}</p>
                   </div>
                   <div className="bg-white p-3 rounded border border-gray-200">
                     <p className="text-xs text-gray-500">Matches Found</p>
-                    <p className="text-xl font-semibold">{result.results.matchesFound}</p>
+                    <p className="text-xl font-semibold">{result.results.matched}</p>
                   </div>
                   <div className="bg-white p-3 rounded border border-gray-200">
                     <p className="text-xs text-gray-500">Emails Sent</p>
-                    <p className="text-xl font-semibold">{result.results.emailsSent}</p>
+                    <p className="text-xl font-semibold">{result.results.emailed}</p>
                   </div>
                   <div className="bg-white p-3 rounded border border-gray-200">
-                    <p className="text-xs text-gray-500">Emails Failed</p>
-                    <p className="text-xl font-semibold">{result.results.emailsFailed}</p>
+                    <p className="text-xs text-gray-500">Errors</p>
+                    <p className="text-xl font-semibold">{result.results.errors}</p>
                   </div>
                 </div>
                 
-                {result.results.details && result.results.details.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">Detailed Results:</h4>
-                    <div className="space-y-3 max-h-60 overflow-y-auto p-1">
-                      {result.results.details.map((detail, index) => (
-                        <div 
-                          key={index} 
-                          className={`p-3 rounded border ${
-                            detail.status === 'success' 
-                              ? 'bg-green-50 border-green-200' 
-                              : detail.status === 'error'
-                              ? 'bg-red-50 border-red-200'
-                              : 'bg-gray-50 border-gray-200'
-                          }`}
-                        >
-                          <p className="font-medium">{detail.alertName}</p>
-                          <div className="text-sm mt-1">
-                            <p>
-                              Status: <span className={`${
-                                detail.status === 'success' 
-                                  ? 'text-green-600' 
-                                  : detail.status === 'error'
-                                  ? 'text-red-600'
-                                  : 'text-gray-600'
-                              }`}>
-                                {detail.status.charAt(0).toUpperCase() + detail.status.slice(1)}
-                              </span>
-                            </p>
-                            {detail.matchesFound !== undefined && (
-                              <p>Matches found: {detail.matchesFound}</p>
-                            )}
-                            {detail.userEmail && (
-                              <p>Email sent to: {detail.userEmail}</p>
-                            )}
-                            {detail.reason && (
-                              <p>Reason: {detail.reason}</p>
-                            )}
-                            {detail.error && (
-                              <p className="text-red-600">Error: {detail.error}</p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                {result.message && (
+                  <p className="text-green-700">{result.message}</p>
                 )}
-                
-                {result.results.matchesFound === 0 && (
-                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
-                    <p className="text-sm text-blue-700">
-                      <strong>No matches found.</strong> This could be because:
-                    </p>
-                    <ul className="list-disc pl-5 mt-2 text-sm text-blue-700">
-                      <li>Your alert keywords don't match any recent jobs</li>
-                      <li>There are no new jobs in the last 24 hours</li>
-                      <li>All matching jobs have already been sent to you</li>
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {result && result.message && (
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-                <p className="text-blue-700">{result.message}</p>
               </div>
             )}
           </div>
@@ -280,18 +230,17 @@ export default function TestJobAlertsPage() {
       
       <Card className="bg-gray-50 border border-gray-200">
         <CardContent className="p-6">
-          <h3 className="font-medium mb-3">About Job Alert Testing</h3>
+          <h3 className="font-medium mb-3">About Job Alert Processing</h3>
           <p className="text-gray-700 mb-3">
-            This page allows you to test the job alert matching and email notification system. When you run a test:
+            This admin tool allows you to manually trigger the job alert matching process. 
+            The system will check all active alerts against specified jobs and send emails for any matches.
           </p>
-          <ul className="list-disc pl-5 space-y-2 text-gray-700 mb-4">
-            <li>Your active job alerts are checked against recent jobs from the last 24 hours</li>
-            <li>If there are matches, a test email will be sent to your account</li>
-            <li>The email will include "[TEST]" in the subject line</li>
-            <li>The system will record which jobs have been sent, so you won't get duplicate alerts</li>
-          </ul>
+          <p className="text-gray-700 mb-3">
+            In normal operation, this process happens automatically when new jobs are added to the system.
+          </p>
           <p className="text-gray-700">
-            In production, this process runs automatically when new jobs are added to the system.
+            <strong>Important:</strong> Each job is only sent to an alert once. If you process the same job multiple times,
+            emails will only be sent for the first match.
           </p>
         </CardContent>
       </Card>
