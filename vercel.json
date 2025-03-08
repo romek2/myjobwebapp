@@ -7,11 +7,6 @@
       {
         "path": "/api/alerts/process?frequency=weekly",
         "schedule": "0 8 * * 1"
-      },
-
-      {
-        "path": "/api/cron/send-emails",
-        "schedule": "* * * * *"
       }
     ]
   }
