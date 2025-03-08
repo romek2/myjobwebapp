@@ -3,22 +3,22 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 
-// Define result type
 type ResultType = {
   success?: boolean;
   message?: string;
+  scheduledTime?: string;
   error?: string;
   details?: string;
 } | null;
 
-export default function TestEmailPage() {
+export default function ScheduledEmailTestPage() {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ResultType>(null);
 
-  const sendTestEmail = async () => {
+  const scheduleEmail = async () => {
     if (!session?.user?.email) {
-      setResult({ error: 'You must be signed in to send a test email' });
+      setResult({ error: 'You must be signed in to schedule an email' });
       return;
     }
 
@@ -26,18 +26,22 @@ export default function TestEmailPage() {
       setIsLoading(true);
       setResult(null);
       
-      const response = await fetch('/api/test-email');
+      const response = await fetch('/api/schedule-email');
       const data = await response.json();
       
       if (response.ok) {
-        setResult({ success: true, message: data.message });
+        setResult({ 
+          success: true, 
+          message: data.message,
+          scheduledTime: data.scheduledTime
+        });
       } else {
         setResult({ 
-          error: data.error || 'Failed to send email', 
+          error: data.error || 'Failed to schedule email', 
           details: data.details || 'No additional details available' 
         });
       }
-    } catch (err: any) { // Type the error as any to access message property
+    } catch (err: any) {
       setResult({ 
         error: 'An unexpected error occurred', 
         details: err?.message || 'Unknown error' 
@@ -47,25 +51,50 @@ export default function TestEmailPage() {
     }
   };
 
+  // Function to format the date for display
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      }).format(date);
+    } catch {
+      return dateString;
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">SendGrid Email Test</h1>
+      <h1 className="text-3xl font-bold mb-6">Schedule Email Test</h1>
       
       {!session ? (
         <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg mb-6">
-          Please sign in to test email functionality.
+          Please sign in to test scheduled emails.
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
           <p className="mb-4">
-            This will send a test email to: <strong>{session.user.email}</strong>
+            This will schedule an email to be sent to <strong>{session.user.email}</strong> in approximately 1 minute.
           </p>
+          
+          <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-4">
+            <p className="text-blue-700 text-sm">
+              <strong>Important:</strong> For this test to work properly, the server must remain running for at least 1 minute after 
+              clicking the button. In production, you would use a more robust solution like Vercel Cron Jobs.
+            </p>
+          </div>
+          
           <button
-            onClick={sendTestEmail}
+            onClick={scheduleEmail}
             disabled={isLoading}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg disabled:opacity-50"
           >
-            {isLoading ? 'Sending...' : 'Send Test Email'}
+            {isLoading ? 'Scheduling...' : 'Schedule Email (1 minute)'}
           </button>
         </div>
       )}
@@ -76,6 +105,12 @@ export default function TestEmailPage() {
             <div className="text-green-700">
               <p className="font-bold">Success!</p>
               <p>{result.message}</p>
+              {result.scheduledTime && (
+                <div className="mt-2 text-sm">
+                  <p><strong>Current time:</strong> {formatDate(new Date().toISOString())}</p>
+                  <p><strong>Expected delivery:</strong> {formatDate(result.scheduledTime)}</p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-red-700">
@@ -95,23 +130,42 @@ export default function TestEmailPage() {
       )}
       
       <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <h2 className="text-xl font-semibold mb-4">Setup Instructions</h2>
+        <h2 className="text-xl font-semibold mb-4">About Scheduled Emails</h2>
         
-        <ol className="list-decimal ml-6 space-y-2">
-          <li>Make sure you've installed the SendGrid package:
-            <pre className="bg-gray-100 p-2 rounded mt-1 text-sm">npm install @sendgrid/mail</pre>
+        <p className="mb-4">
+          There are two ways to implement scheduled emails in your application:
+        </p>
+        
+        <ol className="list-decimal ml-6 space-y-4">
+          <li>
+            <strong>Simple setTimeout (this demo):</strong>
+            <p className="mt-1 text-sm">
+              This approach uses JavaScript's setTimeout to delay sending the email. 
+              It requires the server to remain running and is suitable for development/testing.
+            </p>
           </li>
           
-          <li>Add these environment variables to your <code>.env.local</code> file:
-            <pre className="bg-gray-100 p-2 rounded mt-1 text-sm">
-SENDGRID_API_KEY=your_api_key_here
-SENDGRID_FROM_EMAIL=your_verified_sender@example.com
+          <li>
+            <strong>Vercel Cron Jobs (production):</strong>
+            <p className="mt-1 text-sm">
+              For production, Vercel offers Cron Jobs that can trigger endpoints at scheduled intervals.
+              Add this to your vercel.json file:
+            </p>
+            <pre className="bg-gray-100 p-2 rounded mt-1 text-sm overflow-x-auto">
+{`{
+  "crons": [
+    {
+      "path": "/api/cron/send-emails",
+      "schedule": "* * * * *"
+    }
+  ]
+}`}
             </pre>
+            <p className="mt-1 text-sm">
+              The above schedule runs every minute. For production, you would use a more appropriate
+              schedule like <code>"0 9 * * *"</code> (daily at 9am).
+            </p>
           </li>
-          
-          <li>Make sure you've verified your sender email in SendGrid</li>
-          
-          <li>Click the button above to test your configuration</li>
         </ol>
       </div>
     </div>

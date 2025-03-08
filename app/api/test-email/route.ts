@@ -1,4 +1,4 @@
-// app/api/test-email/route.ts
+// app/api/schedule-email/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
@@ -20,35 +20,50 @@ export async function GET(req: NextRequest) {
     const userEmail = session.user.email;
     const userName = session.user.name || 'User';
     
+    // Calculate the time 1 minute from now
+    const scheduledTime = new Date(Date.now() + 60000); // 60000 ms = 1 minute
+    
+    // Log the scheduled time
+    console.log(`Email scheduled for ${userName} (${userEmail}) at ${scheduledTime.toISOString()}`);
+    
     // Create the email
     const msg = {
       to: userEmail,
-      from: process.env.SENDGRID_FROM_EMAIL as string, // Must be verified in SendGrid
-      subject: 'JobMatcher - Test Email',
-      text: `Hello ${userName},\n\nThis is a test email from JobMatcher to verify our email system is working correctly.\n\nThank you,\nThe JobMatcher Team`,
+      from: process.env.SENDGRID_FROM_EMAIL as string,
+      subject: 'JobMatcher - Scheduled Test Email',
+      text: `Hello ${userName},\n\nThis is a scheduled test email from JobMatcher, sent approximately 1 minute after you requested it.\n\nScheduled at: ${new Date().toISOString()}\nExpected delivery: ${scheduledTime.toISOString()}\n\nThank you,\nThe JobMatcher Team`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #4a6cf7;">JobMatcher</h2>
           <p>Hello ${userName},</p>
-          <p>This is a test email from JobMatcher to verify our email system is working correctly.</p>
+          <p>This is a scheduled test email from JobMatcher, sent approximately 1 minute after you requested it.</p>
+          <p><strong>Scheduled at:</strong> ${new Date().toISOString()}<br>
+          <strong>Expected delivery:</strong> ${scheduledTime.toISOString()}</p>
           <p>Thank you,<br>The JobMatcher Team</p>
         </div>
       `,
     };
     
-    // Send the email
-    await sgMail.send(msg);
+    // Set a timeout to send the email after 1 minute
+    setTimeout(async () => {
+      try {
+        await sgMail.send(msg);
+        console.log(`Scheduled email sent to ${userEmail} at ${new Date().toISOString()}`);
+      } catch (error) {
+        console.error('Error sending scheduled email:', error);
+      }
+    }, 60000); // 60000 ms = 1 minute
     
     return NextResponse.json({ 
       success: true, 
-      message: `Test email sent to ${userEmail}` 
+      message: `Email scheduled to be sent to ${userEmail} in 1 minute`,
+      scheduledTime: scheduledTime.toISOString()
     });
   } catch (error: any) {
-    console.error('Error sending test email:', error);
+    console.error('Error scheduling email:', error);
     
-    // Return more details about the error
     return NextResponse.json({ 
-      error: 'Failed to send email',
+      error: 'Failed to schedule email',
       details: error.message,
       response: error.response?.body || null
     }, { 
