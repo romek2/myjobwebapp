@@ -81,7 +81,7 @@ export default function ScheduledEmailTestPage() {
           <p className="mb-4">
             This will schedule an email to be sent to <strong>{session.user.email}</strong> in approximately 1 minute.
           </p>
-          
+           
           <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-4">
             <p className="text-blue-700 text-sm">
               <strong>Important:</strong> For this test to work properly, the server must remain running for at least 1 minute after 
