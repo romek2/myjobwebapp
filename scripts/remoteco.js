@@ -58,7 +58,7 @@ const TECH_VARIATIONS = Object.entries(TECH_MAPPING).reduce((acc, [main, variati
 
 function extractTechStack(text) {
   // Search in both title and description
-  const normalizedText = ` ${text.toLowerCase()} `;
+  const normalizedText = ` ${text?.toLowerCase() || ''} `;
   const foundTechs = new Set();
 
   Object.entries(TECH_VARIATIONS).forEach(([variation, mainTech]) => {
@@ -162,43 +162,51 @@ async function importJobs() {
     // Load job data
     const dataPath = path.join(__dirname, '..', 'remoteco.json');
     const rawData = await fs.readFile(dataPath, 'utf8');
-    const { jobs } = JSON.parse(rawData);
+    
+    // Parse the JSON data - FIXED: Now handles the actual JSON structure
+    const jobs = JSON.parse(rawData);
+    
+    // Check if the parsed data is an array (direct list of jobs) or has a jobs property
+    const jobsArray = Array.isArray(jobs) ? jobs : (jobs.jobs || []);
 
-    console.log(`Found ${jobs.length} jobs to import`);
+    console.log(`Found ${jobsArray.length} jobs to import`);
 
     // Import jobs in batches for better performance
     let importedCount = 0;
     const batchSize = 10;
     
-    for (let i = 0; i < jobs.length; i += batchSize) {
-      const batch = jobs.slice(i, i + batchSize);
+    for (let i = 0; i < jobsArray.length; i += batchSize) {
+      const batch = jobsArray.slice(i, i + batchSize);
       
       for (const jobData of batch) {
         try {
+          // Create a safe description value
+          const description = jobData.description || '';
+          
           // Extract tech stack from both title and description
-          const titleAndDescription = `${jobData.title} ${jobData.description}`;
+          const titleAndDescription = `${jobData.title || ''} ${description}`;
           const techStack = extractTechStack(titleAndDescription);
           
-          console.log(`\nProcessing job: ${jobData.title}`);
+          console.log(`\nProcessing job: ${jobData.title || 'Untitled'}`);
           console.log('Detected tech stack:', techStack);
 
           // Insert job
           const { data: job, error: jobError } = await supabase
             .from('jobs')
             .insert({
-              title: jobData.title,
-              company: jobData.company,
-              location: jobData.location,
-              description: jobData.description,
-              url: jobData.url,
-              source: jobData.source,
+              title: jobData.title || 'Untitled',
+              company: jobData.company || 'Unknown',
+              location: jobData.location || 'Remote',
+              description: description,
+              url: jobData.url || '',
+              source: jobData.source || 'remote.co',
               posted_at: new Date().toISOString(), // Current time instead of jobData.postedAt
-              salary: jobData.salary,
+              salary: jobData.salary || '',
             })
             .select();
 
           if (jobError) {
-            console.error(`Error inserting job ${jobData.title}:`, jobError);
+            console.error(`Error inserting job ${jobData.title || 'Untitled'}:`, jobError);
             continue; // Skip to the next job
           }
 
@@ -256,11 +264,11 @@ async function importJobs() {
           
           importedCount++;
           if (importedCount % 10 === 0) {
-            console.log(`Imported ${importedCount}/${jobs.length} jobs`);
+            console.log(`Imported ${importedCount}/${jobsArray.length} jobs`);
           }
           
         } catch (jobProcessError) {
-          console.error(`Error processing job ${jobData.title}:`, jobProcessError);
+          console.error(`Error processing job ${jobData?.title || 'Untitled'}:`, jobProcessError);
         }
       }
     }
