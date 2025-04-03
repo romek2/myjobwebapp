@@ -60,7 +60,7 @@ async function importJobs() {
   console.log('Starting job import...');
 
   try {
-    const dataPath = path.join(__dirname, '..', 'jobs-data.json');
+    const dataPath = path.join(__dirname, '..', 'jobicy_jobs.json');
     const rawData = await fs.readFile(dataPath, 'utf8');
     const { jobs } = JSON.parse(rawData);
 
