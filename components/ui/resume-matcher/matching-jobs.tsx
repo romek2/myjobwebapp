@@ -80,22 +80,7 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
                   </div>
                 </div>
 
-                {/* Tech Stack */}
-                {job.techStack && job.techStack.length > 0 && (
-                  <div className="mt-3">
-                    <span className="font-medium text-sm">Tech Stack:</span>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {job.techStack.map((tech) => (
-                        <span 
-                          key={tech} 
-                          className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full"
-                        >
-                          {tech}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
+
               </div>
               <div className="flex space-x-2">
                 <Link href={`/jobs/${job.id}`} passHref>
