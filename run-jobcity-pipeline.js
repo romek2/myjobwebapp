@@ -1,6 +1,6 @@
 // run-jobcity-pipeline.js
 // This script runs the Python Jobcity scraper followed by the Node.js import script
-// Perfect for testing the full pipeline process
+
 
 const { exec } = require('child_process');
 const util = require('util');
