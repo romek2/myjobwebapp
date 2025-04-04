@@ -79,33 +79,22 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
 
 
               </div>
-              <div className="flex space-x-2">
-                <Link href={`/jobs/${job.id}`} passHref>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    title="View job details"
-                  >
-                    <PlayCircle className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open(job.url, '_blank')}
-                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                  title="Apply for job"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Button>
+              <div className="flex items-center">
+                <span className="text-sm text-gray-600">
+                  Posted {new Date(job.postedAt).toLocaleDateString()}
+                </span>
               </div>
             </div>
             
             <div className="mt-3">
               <p className="text-sm text-gray-700 line-clamp-2">{job.description}</p>
-              <Link href={`/jobs/${job.id}`} className="text-sm text-blue-600 hover:underline mt-1 inline-block">
-                View full details
-              </Link>
+              <Button 
+                variant="outline" 
+                onClick={() => window.open(job.url, '_blank')}
+                className="mt-2"
+              >
+                View Job
+              </Button>
             </div>
           </CardContent>
         </Card>
