@@ -128,5 +128,4 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
   );
 };
 
-
 export default MatchingJobs;
