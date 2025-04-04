@@ -1,10 +1,10 @@
-// src/components/ui/resume-matcher/matching-jobs.tsx
+// src/components/ui/resume-matcher/matching-jobs
+
 import React from 'react';
 import { Job } from '@/types/job';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, ExternalLink, PauseCircle, PlayCircle } from 'lucide-react';
-import Link from 'next/link';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface MatchingJobsProps {
   jobs: Job[];
@@ -76,8 +76,6 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
                     )}
                   </div>
                 </div>
-
-
               </div>
               <div className="flex items-center">
                 <span className="text-sm text-gray-600">
@@ -88,13 +86,14 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
             
             <div className="mt-3">
               <p className="text-sm text-gray-700 line-clamp-2">{job.description}</p>
-              <Button 
-                variant="outline" 
-                onClick={() => window.open(job.url, '_blank')}
-                className="mt-2"
+              <a 
+                href={job.url} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-sm text-blue-600 hover:underline mt-1 inline-block"
               >
                 View Job
-              </Button>
+              </a>
             </div>
           </CardContent>
         </Card>
