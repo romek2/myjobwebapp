@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
       }
     }
     
+    
     // Create a checkout session
     const priceId = process.env.STRIPE_PRO_PRICE_ID as string;
     
