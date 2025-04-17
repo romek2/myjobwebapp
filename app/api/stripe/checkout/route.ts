@@ -9,6 +9,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2025-01-27.acacia", // Use your preferred API version
 });
 
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
       }
     }
     
-    
+
 
     // Create a checkout session
     const priceId = process.env.STRIPE_PRO_PRICE_ID as string;
