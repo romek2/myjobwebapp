@@ -35,42 +35,107 @@ function extractTechStack(text) {
   return foundTechs;
 }
 
-// Main function to fetch and parse RSS feed
+// Function to extract company name and job title from the full title
+function extractCompanyAndTitle(fullTitle) {
+  if (!fullTitle) {
+    return { company: '', title: '' };
+  }
+  
+  // First try to match Company: JobTitle pattern (with colon)
+  const colonMatch = fullTitle.match(/^([^:]+):\s*(.+)$/);
+  if (colonMatch) {
+    return {
+      company: colonMatch[1].trim(),
+      title: colonMatch[2].trim()
+    };
+  }
+  
+  // Try to match Company - JobTitle pattern (with dash)
+  const dashMatch = fullTitle.match(/^([^-]+)\s*-\s*(.+)$/);
+  if (dashMatch) {
+    return {
+      company: dashMatch[1].trim(),
+      title: dashMatch[2].trim()
+    };
+  }
+  
+  // If no pattern matches, we can't extract the company
+  return {
+    company: '',
+    title: fullTitle.trim()
+  };
+}
+
+// Main function to fetch and parse RSS feed from RSS.app
 async function fetchJobsFromRSS(rssUrl) {
   try {
     console.log(`Fetching RSS feed from: ${rssUrl}`);
     
     // Fetch the RSS feed
     const response = await fetch(rssUrl);
+    
+    console.log(`Response status: ${response.status}`);
+    
+    if (!response.ok) {
+      console.error(`HTTP Error: ${response.status} ${response.statusText}`);
+      return [];
+    }
+    
     const xmlText = await response.text();
+    
+    // Log a small sample of the response
+    console.log("First 200 characters of response:");
+    console.log(xmlText.substring(0, 200) + "...");
 
     // Parse XML to JSON
     return new Promise((resolve, reject) => {
-      parseString(xmlText, (err, result) => {
+      parseString(xmlText, { explicitArray: false }, (err, result) => {
         if (err) {
           console.error('Error parsing XML:', err);
           reject(err);
           return;
         }
 
+        if (!result || !result.rss || !result.rss.channel) {
+          console.error('Invalid RSS format or empty feed');
+          console.log('Response structure:', JSON.stringify(result, null, 2).substring(0, 500) + '...');
+          resolve([]);
+          return;
+        }
+
         // Extract job listings
-        const items = result.rss.channel[0].item || [];
+        const items = Array.isArray(result.rss.channel.item) 
+          ? result.rss.channel.item 
+          : (result.rss.channel.item ? [result.rss.channel.item] : []);
+        
+        console.log(`Found ${items.length} items in RSS feed`);
+        
+        // Log the first item to see its structure
+        if (items.length > 0) {
+          console.log('First item structure example:');
+          console.log(JSON.stringify(items[0], null, 2));
+        }
         
         const jobListings = items.map(item => {
+          if (!item) return null;
+          
           // Extract relevant information
-          const title = item.title ? item.title[0] : '';
-          const description = item.description ? stripHtml(item.description[0]) : '';
-          const link = item.link ? item.link[0] : '';
-          const pubDate = item.pubDate ? item.pubDate[0] : new Date().toISOString();
-
-          // Try to extract company from title (typical WeWorkRemotely format)
-          const companyMatch = title.match(/(.+?)\s*-\s*(.+)/);
-          const company = companyMatch ? companyMatch[1].trim() : '';
-          const jobTitle = companyMatch ? companyMatch[2].trim() : title;
+          const fullTitle = item.title || '';
+          const description = item.description ? stripHtml(item.description) : '';
+          const link = item.link || '';
+          const pubDate = item.pubDate || new Date().toISOString();
+          
+          // Extract company and job title from the full title
+          const { company, title } = extractCompanyAndTitle(fullTitle);
+          
+          // Log some examples to debug the extraction
+          if (company === '') {
+            console.log(`Could not extract company from: "${fullTitle}"`);
+          }
 
           return {
-            title: jobTitle,
-            company,
+            title: title,
+            company: company,
             location: 'Remote',
             description,
             url: link,
@@ -79,11 +144,11 @@ async function fetchJobsFromRSS(rssUrl) {
             salary: '',
             job_type: 'Remote',
             category: '',
-            tech_stack: extractTechStack(title + ' ' + description),
+            tech_stack: extractTechStack(fullTitle + ' ' + description),
             company_logo: '',
             scraped_date: new Date().toISOString().split('T')[0]
           };
-        });
+        }).filter(job => job !== null);
 
         console.log(`Extracted ${jobListings.length} job listings from RSS`);
         resolve(jobListings);
@@ -97,21 +162,34 @@ async function fetchJobsFromRSS(rssUrl) {
 
 // Main execution function
 async function main() {
-  const rssUrl = 'https://weworkremotely.com/categories/all-other-remote-jobs.rss';
+  // Use the RSS.app feed URL
+  const rssUrl = 'https://rss.app/feeds/rhB7u3pNkGCnzqRn.xml';
 
   try {
+    console.log('Starting WeWorkRemotely job scraper with RSS.app feed...');
+    
     const jobs = await fetchJobsFromRSS(rssUrl);
 
     // Save to JSON file
     if (jobs.length > 0) {
       const outputPath = path.join(__dirname, 'weworkremotely_jobs.json');
       fs.writeFileSync(outputPath, JSON.stringify(jobs, null, 2));
-      console.log(`Saved ${jobs.length} jobs to ${outputPath}`);
+      console.log(`\nSuccess! Saved ${jobs.length} jobs to ${outputPath}`);
+      
+      // Print a few examples of the parsed jobs
+      console.log('\nExample job entries:');
+      for (let i = 0; i < Math.min(3, jobs.length); i++) {
+        console.log(`Example ${i+1}:`);
+        console.log(`  Title: "${jobs[i].title}"`);
+        console.log(`  Company: "${jobs[i].company}"`);
+      }
+    } else {
+      console.log('\nNo jobs found or error occurred during parsing');
     }
 
     return jobs;
   } catch (error) {
-    console.error('Error processing RSS feed:', error);
+    console.error('Error in main function:', error);
     return [];
   }
 }
