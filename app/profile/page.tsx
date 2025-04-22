@@ -2,10 +2,12 @@
 
 import { useSession } from 'next-auth/react';
 import { redirect, useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, FileText, Upload, RefreshCw, Briefcase, Clock, Building, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 
 function ProfileContent() {
@@ -20,9 +22,41 @@ function ProfileContent() {
   const searchParams = useSearchParams();
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [isManagingSubscription, setIsManagingSubscription] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [uploadSuccess, setUploadSuccess] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Get checkout status from URL parameters
   const checkoutStatus = searchParams.get("checkout");
+
+  // Mock data for job applications - in a real app, you would fetch this from your backend
+  const [applications] = useState([
+    {
+      id: '1',
+      jobTitle: 'Senior Frontend Developer',
+      company: 'TechCorp Inc.',
+      status: 'Applied',
+      appliedDate: '2025-03-15',
+      location: 'Remote',
+    },
+    {
+      id: '2',
+      jobTitle: 'Full Stack Engineer',
+      company: 'WebSolutions LLC',
+      status: 'Interview',
+      appliedDate: '2025-03-10',
+      location: 'New York, NY',
+    },
+    {
+      id: '3',
+      jobTitle: 'React Developer',
+      company: 'AppWorks',
+      status: 'Rejected',
+      appliedDate: '2025-03-05',
+      location: 'San Francisco, CA',
+    }
+  ]);
 
   const handleSubscribe = async () => {
     try {
@@ -54,27 +88,100 @@ function ProfileContent() {
   const handleManageSubscription = async () => {
     try {
       setIsManagingSubscription(true);
+      console.log("Starting request to Stripe portal...");
+      
       const response = await fetch("/api/stripe/portal", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
       });
-
+      
+      console.log("Response status:", response.status);
+      
+      if (!response.ok) {
+        console.error("HTTP error:", response.status, response.statusText);
+      }
+      
       const data = await response.json();
+      console.log("Response data:", data);
 
       if (data.url) {
-        // Redirect to Stripe Customer Portal
+        console.log("Redirecting to:", data.url);
         window.location.href = data.url;
       } else {
         console.error("Failed to create portal session:", data.error);
-        alert("Unable to open subscription management. Please try again.");
+        alert(`Unable to open subscription management: ${data.error || "No URL returned"}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error managing subscription:", error);
-      alert("Something went wrong. Please try again.");
+      alert(`Something went wrong: ${error.message || "Unknown error"}`);
     } finally {
       setIsManagingSubscription(false);
+    }
+  };
+
+  const handleFileUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file type
+    const fileType = file.type;
+    const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    
+    if (!validTypes.includes(fileType)) {
+      setUploadError('Invalid file type. Please upload a PDF or Word document');
+      setUploadSuccess('');
+      return;
+    }
+
+    // Check file size (limit to 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      setUploadError('File is too large. Maximum size is 5MB');
+      setUploadSuccess('');
+      return;
+    }
+
+    // Reset error state
+    setUploadError('');
+    setIsUploading(true);
+
+    // Create FormData
+    const formData = new FormData();
+    formData.append('resume', file);
+
+    try {
+      // In a real implementation, you would call your API endpoint
+      // const response = await fetch('/api/resumes/upload', {
+      //   method: 'POST',
+      //   body: formData
+      // });
+      
+      // For now, we'll simulate a successful upload
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // if (!response.ok) {
+      //   throw new Error('Failed to upload resume');
+      // }
+      
+      // const data = await response.json();
+      
+      setUploadSuccess(`Successfully uploaded ${file.name}`);
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Error uploading resume:', error);
+      setUploadError('Failed to upload resume. Please try again.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -154,7 +261,14 @@ function ProfileContent() {
                   disabled={isManagingSubscription}
                   className="bg-blue-500 hover:bg-blue-600 text-white"
                 >
-                  {isManagingSubscription ? "Loading..." : "Manage Subscription"}
+                  {isManagingSubscription ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Manage Subscription"
+                  )}
                 </Button>
               </div>
             ) : (
@@ -166,7 +280,6 @@ function ProfileContent() {
                   <li>Priority support</li>
                   <li>Advanced job search filters</li>
                   <li>Early Access</li>
-                  
                 </ul>
                 <div className="flex space-x-4">
                   <Button
@@ -174,7 +287,14 @@ function ProfileContent() {
                     disabled={isSubscribing}
                     className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-medium"
                   >
-                    {isSubscribing ? "Loading..." : "Upgrade to PRO"}
+                    {isSubscribing ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      "Upgrade to PRO"
+                    )}
                   </Button>
                   <Button
                     onClick={() => router.push("/pricing")}
@@ -191,21 +311,162 @@ function ProfileContent() {
 
         {/* Job Management Cards */}
         <div className="space-y-6">
+          {/* Resume Upload Card */}
           <Card>
             <CardHeader>
               <CardTitle>Your Resumes</CardTitle>
-              <CardDescription>Upload and manage your resumes</CardDescription>
+              <CardDescription>Upload and manage your resumes (PDF or DOC files only)</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-gray-500">
-                <p>No resumes uploaded yet</p>
-                <Button variant="link" className="mt-2 text-blue-500 hover:text-blue-600 p-0">
-                  + Upload a Resume
+              {uploadError && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  <AlertDescription>{uploadError}</AlertDescription>
+                </Alert>
+              )}
+              
+              {uploadSuccess && (
+                <Alert className="mb-4 bg-green-50 border-green-200 text-green-800">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  <AlertDescription>{uploadSuccess}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="text-gray-500 mb-4">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer" onClick={handleFileUpload}>
+                  <FileText className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                  <p className="font-medium mb-1">Upload your resume</p>
+                  <p className="text-sm text-gray-500 mb-2">Drag and drop or click to browse</p>
+                  <p className="text-xs text-gray-400">Supports PDF, DOC, DOCX (max 5MB)</p>
+                </div>
+                
+                {/* Hidden file input */}
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileChange} 
+                  className="hidden" 
+                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" 
+                />
+              </div>
+
+              {isUploading && (
+                <div className="text-center py-2">
+                  <RefreshCw className="h-5 w-5 mx-auto animate-spin text-blue-500 mb-1" />
+                  <p className="text-sm text-gray-600">Uploading...</p>
+                </div>
+              )}
+              
+              {/* Resume List - In a real app, you would fetch this from your backend */}
+              <div className="mt-4">
+                <h3 className="font-medium text-gray-900 mb-2">Uploaded Resumes</h3>
+                <div className="border border-gray-200 rounded-md divide-y divide-gray-200">
+                  <div className="p-3 flex justify-between items-center">
+                    <div className="flex items-center">
+                      <FileText className="h-5 w-5 text-blue-500 mr-2" />
+                      <div>
+                        <p className="font-medium">MyResume_2025.pdf</p>
+                        <p className="text-xs text-gray-500">Uploaded on March 15, 2025</p>
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm" className="h-8 px-2 text-sm">
+                        View
+                      </Button>
+                      <Button variant="outline" size="sm" className="h-8 px-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50">
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Application Tracker Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Briefcase className="h-5 w-5 mr-2" />
+                Application Tracker
+              </CardTitle>
+              <CardDescription>Track your job applications and their status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {applications.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead>
+                      <tr>
+                        <th className="px-3 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
+                        <th className="px-3 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                        <th className="px-3 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-3 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applied</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {applications.map((app) => (
+                        <tr key={app.id} className="hover:bg-gray-50">
+                          <td className="px-3 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{app.jobTitle}</div>
+                            <div className="text-xs text-gray-500">{app.location}</div>
+                          </td>
+                          <td className="px-3 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <Building className="h-4 w-4 text-gray-400 mr-1" />
+                              <span className="text-sm text-gray-900">{app.company}</span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-4 whitespace-nowrap">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              app.status === 'Applied' ? 'bg-blue-100 text-blue-800' : 
+                              app.status === 'Interview' ? 'bg-green-100 text-green-800' : 
+                              app.status === 'Rejected' ? 'bg-red-100 text-red-800' : 
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {app.status}
+                            </span>
+                          </td>
+                          <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div className="flex items-center">
+                              <Clock className="h-4 w-4 text-gray-400 mr-1" />
+                              {new Date(app.appliedDate).toLocaleDateString()}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Briefcase className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No applications yet</h3>
+                  <p className="text-gray-600 mb-4">
+                    When you apply for jobs, they will appear here
+                  </p>
+                  <Button 
+                    onClick={() => router.push("/")}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Browse Jobs
+                  </Button>
+                </div>
+              )}
+              
+              <div className="mt-4 text-center">
+                <Button 
+                  variant="outline"
+                  onClick={() => router.push("/applications")}
+                  className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300"
+                >
+                  View All Applications
                 </Button>
               </div>
             </CardContent>
           </Card>
 
+          {/* Job Alerts Card */}
           <Card>
             <CardHeader>
               <CardTitle>Job Alerts</CardTitle>
@@ -235,25 +496,6 @@ function ProfileContent() {
                     </Button>
                   )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Job Preferences</CardTitle>
-              <CardDescription>Set preferences to improve job matching</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="space-y-1">
-                  <p className="text-sm">Desired Role: Not set</p>
-                  <p className="text-sm">Location: Not set</p>
-                  <p className="text-sm">Experience Level: Not set</p>
-                </div>
-                <Button variant="link" className="text-blue-500 hover:text-blue-600 p-0">
-                  Edit Preferences
-                </Button>
               </div>
             </CardContent>
           </Card>
