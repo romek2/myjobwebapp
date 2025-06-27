@@ -163,7 +163,7 @@ async function fetchJobsFromRSS(rssUrl) {
 // Main execution function
 async function main() {
   // Use the RSS.app feed URL
-  const rssUrl = 'https://rss.app/feeds/BT6Kq6nvMbY6h4aX.xml';
+  const rssUrl = 'https://rss.app/feeds/Sbww1H7xkVVGCPrW.xml';
 
   try {
     console.log('Starting WeWorkRemotely job scraper with RSS.app feed...');
