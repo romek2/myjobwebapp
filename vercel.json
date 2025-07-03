@@ -1,9 +1,8 @@
 {
-    "crons": [
-     {
-      "path": "/api/pipeline/daily-jobs",
-      "schedule": "10 14 * * *"
+  "crons": [
+    {
+      "path": "/api/test-cron",
+      "schedule": "25 14 * * *"
     }
-     
-    ]
-  }
+  ]
+}
