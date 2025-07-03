@@ -1,23 +1,15 @@
-import { NextResponse } from 'next/server';
-
 export async function GET() {
   const now = new Date();
-  const message = `🎉 Cron job executed successfully!`;
+  const utcTime = now.toISOString();
+  const localTime = now.toLocaleString();
   
-  console.log('='.repeat(50));
-  console.log(message);
-  console.log(`Timestamp: ${now.toISOString()}`);
-  console.log(`Local time: ${now.toLocaleString()}`);
-  console.log('='.repeat(50));
+  console.log(`UTC Time: ${utcTime}`);
+  console.log(`Local Time: ${localTime}`);
   
   return NextResponse.json({
     success: true,
-    message: message,
-    timestamp: now.toISOString(),
-    localTime: now.toLocaleString(),
-    testData: {
-      randomNumber: Math.floor(Math.random() * 1000),
-      serverTime: now.getTime()
-    }
+    utcTime: utcTime,
+    localTime: localTime,
+    message: "Cron executed!"
   });
 }
