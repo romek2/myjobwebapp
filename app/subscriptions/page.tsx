@@ -415,7 +415,6 @@ export default function ManageSubscriptionsPage() {
                       <td className="px-4 py-3 text-center text-green-600">✓</td>
                     </tr>
                   
-                  
                     <tr>
                       <td className="px-4 py-3 text-sm text-gray-900">Early Access to Jobs</td>
                       <td className="px-4 py-3 text-center text-gray-400">✗</td>
