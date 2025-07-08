@@ -127,10 +127,7 @@ export default function PricingPage() {
                 <CheckIcon className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
                 <span><strong>Live Chat</strong> with professional recruiters</span>
               </li>
-              <li className="flex items-start">
-                <CheckIcon className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
-                <span><strong>Advanced filters</strong> for tech stack and salary</span>
-              </li>
+             
               <li className="flex items-start">
                 <CheckIcon className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
                 <span><strong>Early Access</strong> to premium job posts</span>

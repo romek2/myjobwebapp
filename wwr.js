@@ -3,7 +3,7 @@
 
 const CONFIG = {
   // RSS Feed Configuration
-  FEED_ID: 'KdjsdiAf2YOA2mpL',  // Change this to your RSS feed ID
+  FEED_ID: 'FCZ2i5xowBKbgcd4',  // Change this to your RSS feed ID
   
   // Alternative RSS URLs to try (add/modify as needed)
   BACKUP_RSS_URLS: [
