@@ -414,6 +414,8 @@ export default function ManageSubscriptionsPage() {
                       <td className="px-4 py-3 text-center text-gray-400">✗</td>
                       <td className="px-4 py-3 text-center text-green-600">✓</td>
                     </tr>
+
+                    
                 
 
                 
