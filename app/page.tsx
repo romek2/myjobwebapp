@@ -89,17 +89,7 @@ export default function Home() {
                     </p>
                   </div>
                   
-                  {/* Quick Stats */}
-                  {!isLoading && jobs.length > 0 && (
-                    <div className="flex flex-wrap gap-2 text-xs sm:text-sm">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                        Remote: {jobs.filter(job => job.location.toLowerCase().includes('remote')).length}
-                      </span>
-                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full">
-                        With Salary: {jobs.filter(job => job.salary).length}
-                      </span>
-                    </div>
-                  )}
+               
                 </div>
               </div>
               
