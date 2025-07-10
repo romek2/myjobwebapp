@@ -98,7 +98,7 @@ export default function PricingPage() {
           <div className="p-8">
             <h2 className="text-2xl font-bold mb-4">PRO</h2>
             <div className="mb-4">
-              <span className="text-4xl font-bold">$9.99</span>
+              <span className="text-4xl font-bold">$4.99</span>
               <span className="text-gray-600">/month</span>
             </div>
             <p className="text-gray-600 mb-8">

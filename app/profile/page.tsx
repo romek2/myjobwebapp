@@ -71,7 +71,6 @@ function ProfileContent() {
       const data = await response.json();
 
       if (data.url) {
-        // Redirect to Stripe Checkout
         window.location.href = data.url;
       } else {
         console.error("Failed to create checkout session:", data.error);
@@ -88,7 +87,6 @@ function ProfileContent() {
   const handleManageSubscription = async () => {
     try {
       setIsManagingSubscription(true);
-      console.log("Starting request to Stripe portal...");
       
       const response = await fetch("/api/stripe/portal", {
         method: "POST",
@@ -97,17 +95,9 @@ function ProfileContent() {
         },
       });
       
-      console.log("Response status:", response.status);
-      
-      if (!response.ok) {
-        console.error("HTTP error:", response.status, response.statusText);
-      }
-      
       const data = await response.json();
-      console.log("Response data:", data);
 
       if (data.url) {
-        console.log("Redirecting to:", data.url);
         window.location.href = data.url;
       } else {
         console.error("Failed to create portal session:", data.error);
@@ -140,40 +130,21 @@ function ProfileContent() {
     }
 
     // Check file size (limit to 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       setUploadError('File is too large. Maximum size is 5MB');
       setUploadSuccess('');
       return;
     }
 
-    // Reset error state
     setUploadError('');
     setIsUploading(true);
 
-    // Create FormData
-    const formData = new FormData();
-    formData.append('resume', file);
-
     try {
-      // In a real implementation, you would call your API endpoint
-      // const response = await fetch('/api/resumes/upload', {
-      //   method: 'POST',
-      //   body: formData
-      // });
-      
-      // For now, we'll simulate a successful upload
+      // Simulate upload - replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // if (!response.ok) {
-      //   throw new Error('Failed to upload resume');
-      // }
-      
-      // const data = await response.json();
-      
       setUploadSuccess(`Successfully uploaded ${file.name}`);
       
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -187,12 +158,12 @@ function ProfileContent() {
 
   if (status === "loading") {
     return (
-      <main className="min-h-screen p-8">
-        <div className="max-w-2xl mx-auto">
+      <main className="min-h-screen p-4 sm:p-8">
+        <div className="max-w-4xl mx-auto">
           <Card>
             <CardContent className="p-8">
               <div className="flex justify-center">
-                Loading...
+                <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
               </div>
             </CardContent>
           </Card>
@@ -202,64 +173,77 @@ function ProfileContent() {
   }
 
   return (
-    <main className="min-h-screen p-8">
-      <div className="max-w-2xl mx-auto">
-        <Card className="mb-6">
+    <main className="min-h-screen p-4 sm:p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto space-y-6">
+        
+        {/* Profile Header Card */}
+        <Card>
           <CardHeader>
-            <CardTitle>Profile</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl">Profile</CardTitle>
           </CardHeader>
-          <CardContent>
-            {/* Display checkout status messages */}
+          <CardContent className="space-y-4">
+            {/* Checkout Status Messages */}
             {checkoutStatus === "success" && (
-              <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-                Your subscription was successful! You now have PRO access.
-              </div>
+              <Alert className="bg-green-50 border-green-200 text-green-800">
+                <CheckCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Your subscription was successful! You now have PRO access.
+                </AlertDescription>
+              </Alert>
             )}
             
             {checkoutStatus === "cancel" && (
-              <div className="mb-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
-                Your subscription process was canceled.
-              </div>
+              <Alert className="bg-yellow-50 border-yellow-200 text-yellow-800">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Your subscription process was canceled.
+                </AlertDescription>
+              </Alert>
             )}
 
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
+            {/* User Info */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <Avatar className="h-16 w-16 sm:h-20 sm:w-20">
                 <AvatarImage src={session?.user?.image || ''} />
-                <AvatarFallback>
+                <AvatarFallback className="text-lg">
                   {session?.user?.name?.[0] || session?.user?.email?.[0] || '?'}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <h2 className="text-2xl font-bold">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl sm:text-2xl font-bold break-words">
                   {session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}
                 </h2>
-                <p className="text-gray-500">{session?.user?.email}</p>
-                <p className="mt-2">
-                  <span className="font-medium">Subscription:</span>{" "}
-                  <span className={session?.user?.subscriptionStatus === "PRO" ? "text-green-600 font-semibold" : "text-gray-600"}>
+                <p className="text-gray-500 break-all text-sm sm:text-base">{session?.user?.email}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium">Subscription:</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                    session?.user?.subscriptionStatus === "PRO" 
+                      ? "bg-green-100 text-green-800" 
+                      : "bg-gray-100 text-gray-800"
+                  }`}>
                     {session?.user?.subscriptionStatus || "FREE"}
                   </span>
-                </p>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Subscription Management Card */}
-        <Card className="mb-6">
+        <Card>
           <CardHeader>
-            <CardTitle>Subscription Management</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">Subscription Management</CardTitle>
           </CardHeader>
           <CardContent>
             {session?.user?.subscriptionStatus === "PRO" ? (
-              <div>
-                <p className="mb-4">
+              <div className="space-y-4">
+                <p className="text-sm sm:text-base">
                   You currently have a <span className="font-semibold text-green-600">PRO</span> subscription.
                 </p>
                 <Button
                   onClick={handleManageSubscription}
                   disabled={isManagingSubscription}
-                  className="bg-blue-500 hover:bg-blue-600 text-white"
+                  className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white"
                 >
                   {isManagingSubscription ? (
                     <>
@@ -272,20 +256,20 @@ function ProfileContent() {
                 </Button>
               </div>
             ) : (
-              <div>
-                <p className="mb-4">Upgrade to PRO to unlock all features:</p>
-                <ul className="list-disc ml-5 mb-4">
+              <div className="space-y-4">
+                <p className="text-sm sm:text-base">Upgrade to PRO to unlock all features:</p>
+                <ul className="list-disc ml-5 space-y-1 text-sm sm:text-base">
                   <li>Resume analysis optimized for ATS</li>
                   <li>Custom job alerts</li>
                   <li>Priority support</li>
                   <li>Advanced job search filters</li>
                   <li>Early Access</li>
                 </ul>
-                <div className="flex space-x-4">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <Button
                     onClick={handleSubscribe}
                     disabled={isSubscribing}
-                    className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-medium"
+                    className="w-full sm:w-auto bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-medium"
                   >
                     {isSubscribing ? (
                       <>
@@ -299,7 +283,7 @@ function ProfileContent() {
                   <Button
                     onClick={() => router.push("/pricing")}
                     variant="outline"
-                    className="border border-gray-300 hover:bg-gray-50 text-gray-700"
+                    className="w-full sm:w-auto border border-gray-300 hover:bg-gray-50 text-gray-700"
                   >
                     View Plans
                   </Button>
@@ -309,92 +293,93 @@ function ProfileContent() {
           </CardContent>
         </Card>
 
-        {/* Job Management Cards */}
-        <div className="space-y-6">
-          {/* Resume Upload Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Resumes</CardTitle>
-              <CardDescription>Upload and manage your resumes (PDF or DOC files only)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {uploadError && (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertCircle className="h-4 w-4 mr-2" />
-                  <AlertDescription>{uploadError}</AlertDescription>
-                </Alert>
-              )}
-              
-              {uploadSuccess && (
-                <Alert className="mb-4 bg-green-50 border-green-200 text-green-800">
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  <AlertDescription>{uploadSuccess}</AlertDescription>
-                </Alert>
-              )}
+        {/* Resume Upload Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg sm:text-xl">Your Resumes</CardTitle>
+            <CardDescription>Upload and manage your resumes (PDF or DOC files only)</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {uploadError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{uploadError}</AlertDescription>
+              </Alert>
+            )}
+            
+            {uploadSuccess && (
+              <Alert className="bg-green-50 border-green-200 text-green-800">
+                <CheckCircle className="h-4 w-4" />
+                <AlertDescription>{uploadSuccess}</AlertDescription>
+              </Alert>
+            )}
 
-              <div className="text-gray-500 mb-4">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer" onClick={handleFileUpload}>
-                  <FileText className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                  <p className="font-medium mb-1">Upload your resume</p>
-                  <p className="text-sm text-gray-500 mb-2">Drag and drop or click to browse</p>
-                  <p className="text-xs text-gray-400">Supports PDF, DOC, DOCX (max 5MB)</p>
-                </div>
-                
-                {/* Hidden file input */}
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileChange} 
-                  className="hidden" 
-                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" 
-                />
+            {/* Upload Area */}
+            <div 
+              className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-8 text-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+              onClick={handleFileUpload}
+            >
+              <FileText className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+              <p className="font-medium mb-1 text-sm sm:text-base">Upload your resume</p>
+              <p className="text-xs sm:text-sm text-gray-500 mb-2">Drag and drop or click to browse</p>
+              <p className="text-xs text-gray-400">Supports PDF, DOC, DOCX (max 5MB)</p>
+            </div>
+            
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              className="hidden" 
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" 
+            />
+
+            {isUploading && (
+              <div className="text-center py-4">
+                <RefreshCw className="h-5 w-5 mx-auto animate-spin text-blue-500 mb-2" />
+                <p className="text-sm text-gray-600">Uploading...</p>
               </div>
-
-              {isUploading && (
-                <div className="text-center py-2">
-                  <RefreshCw className="h-5 w-5 mx-auto animate-spin text-blue-500 mb-1" />
-                  <p className="text-sm text-gray-600">Uploading...</p>
-                </div>
-              )}
-              
-              {/* Resume List - In a real app, you would fetch this from your backend */}
-              <div className="mt-4">
-                <h3 className="font-medium text-gray-900 mb-2">Uploaded Resumes</h3>
-                <div className="border border-gray-200 rounded-md divide-y divide-gray-200">
-                  <div className="p-3 flex justify-between items-center">
-                    <div className="flex items-center">
-                      <FileText className="h-5 w-5 text-blue-500 mr-2" />
-                      <div>
-                        <p className="font-medium">MyResume_2025.pdf</p>
-                        <p className="text-xs text-gray-500">Uploaded on March 15, 2025</p>
-                      </div>
+            )}
+            
+            {/* Resume List */}
+            <div>
+              <h3 className="font-medium text-gray-900 mb-3 text-sm sm:text-base">Uploaded Resumes</h3>
+              <div className="border border-gray-200 rounded-md">
+                <div className="p-3 sm:p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                  <div className="flex items-start sm:items-center gap-3">
+                    <FileText className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5 sm:mt-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium break-words text-sm sm:text-base">MyResume_2025.pdf</p>
+                      <p className="text-xs text-gray-500">Uploaded on March 15, 2025</p>
                     </div>
-                    <div className="flex space-x-2">
-                      <Button variant="outline" size="sm" className="h-8 px-2 text-sm">
-                        View
-                      </Button>
-                      <Button variant="outline" size="sm" className="h-8 px-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50">
-                        Delete
-                      </Button>
-                    </div>
+                  </div>
+                  <div className="flex gap-2 self-end sm:self-auto">
+                    <Button variant="outline" size="sm" className="flex-1 sm:flex-none text-xs sm:text-sm">
+                      View
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1 sm:flex-none text-xs sm:text-sm text-red-600 hover:text-red-700 hover:bg-red-50">
+                      Delete
+                    </Button>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Application Tracker Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Briefcase className="h-5 w-5 mr-2" />
-                Application Tracker
-              </CardTitle>
-              <CardDescription>Track your job applications and their status</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {applications.length > 0 ? (
-                <div className="overflow-x-auto">
+        {/* Application Tracker Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center text-lg sm:text-xl">
+              <Briefcase className="h-5 w-5 mr-2" />
+              Application Tracker
+            </CardTitle>
+            <CardDescription>Track your job applications and their status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {applications.length > 0 ? (
+              <div className="space-y-4">
+                {/* Desktop Table - Hidden on mobile */}
+                <div className="hidden lg:block overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead>
                       <tr>
@@ -407,18 +392,18 @@ function ProfileContent() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {applications.map((app) => (
                         <tr key={app.id} className="hover:bg-gray-50">
-                          <td className="px-3 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{app.jobTitle}</div>
+                          <td className="px-3 py-4">
+                            <div className="text-sm font-medium text-gray-900 break-words">{app.jobTitle}</div>
                             <div className="text-xs text-gray-500">{app.location}</div>
                           </td>
-                          <td className="px-3 py-4 whitespace-nowrap">
+                          <td className="px-3 py-4">
                             <div className="flex items-center">
-                              <Building className="h-4 w-4 text-gray-400 mr-1" />
-                              <span className="text-sm text-gray-900">{app.company}</span>
+                              <Building className="h-4 w-4 text-gray-400 mr-1 flex-shrink-0" />
+                              <span className="text-sm text-gray-900 break-words">{app.company}</span>
                             </div>
                           </td>
-                          <td className="px-3 py-4 whitespace-nowrap">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          <td className="px-3 py-4">
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
                               app.status === 'Applied' ? 'bg-blue-100 text-blue-800' : 
                               app.status === 'Interview' ? 'bg-green-100 text-green-800' : 
                               app.status === 'Rejected' ? 'bg-red-100 text-red-800' : 
@@ -427,10 +412,10 @@ function ProfileContent() {
                               {app.status}
                             </span>
                           </td>
-                          <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-3 py-4 text-sm text-gray-500">
                             <div className="flex items-center">
-                              <Clock className="h-4 w-4 text-gray-400 mr-1" />
-                              {new Date(app.appliedDate).toLocaleDateString()}
+                              <Clock className="h-4 w-4 text-gray-400 mr-1 flex-shrink-0" />
+                              <span className="whitespace-nowrap">{new Date(app.appliedDate).toLocaleDateString()}</span>
                             </div>
                           </td>
                         </tr>
@@ -438,68 +423,104 @@ function ProfileContent() {
                     </tbody>
                   </table>
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Briefcase className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No applications yet</h3>
-                  <p className="text-gray-600 mb-4">
-                    When you apply for jobs, they will appear here
-                  </p>
-                  <Button 
-                    onClick={() => router.push("/")}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    Browse Jobs
-                  </Button>
+
+                {/* Mobile Cards - Shown only on mobile and tablet */}
+                <div className="lg:hidden space-y-3">
+                  {applications.map((app) => (
+                    <Card key={app.id} className="border border-gray-200">
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-gray-900 break-words text-sm">{app.jobTitle}</h4>
+                              <p className="text-xs text-gray-500 flex items-center mt-1">
+                                <Building className="h-3 w-3 mr-1 flex-shrink-0" />
+                                <span className="break-words">{app.company}</span>
+                              </p>
+                            </div>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
+                              app.status === 'Applied' ? 'bg-blue-100 text-blue-800' : 
+                              app.status === 'Interview' ? 'bg-green-100 text-green-800' : 
+                              app.status === 'Rejected' ? 'bg-red-100 text-red-800' : 
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {app.status}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center text-xs text-gray-500">
+                            <span className="break-words">{app.location}</span>
+                            <span className="flex items-center whitespace-nowrap">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {new Date(app.appliedDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              )}
-              
-              <div className="mt-4 text-center">
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Briefcase className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium mb-2">No applications yet</h3>
+                <p className="text-gray-600 mb-4 text-sm sm:text-base">
+                  When you apply for jobs, they will appear here
+                </p>
                 <Button 
-                  variant="outline"
-                  onClick={() => router.push("/applications")}
-                  className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300"
+                  onClick={() => router.push("/")}
+                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  View All Applications
+                  Browse Jobs
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            )}
+            
+            <div className="mt-6 text-center">
+              <Button 
+                variant="outline"
+                onClick={() => router.push("/applications")}
+                className="w-full sm:w-auto text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300"
+              >
+                View All Applications
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Job Alerts Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Job Alerts</CardTitle>
-              <CardDescription>Get notified about new jobs matching your criteria</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-gray-500">
-                <p>
-                  {session?.user?.subscriptionStatus === "PRO" 
-                    ? "Manage your customized job alerts" 
-                    : "Upgrade to PRO to create custom job alerts"}
-                </p>
-                <div className="mt-2">
-                  {session?.user?.subscriptionStatus === "PRO" ? (
-                    <Link href="/alerts">
-                      <Button variant="link" className="text-blue-500 hover:text-blue-600 p-0">
-                        Manage Alerts
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Button 
-                      variant="link" 
-                      className="text-blue-500 hover:text-blue-600 p-0"
-                      onClick={handleSubscribe}
-                    >
-                      Upgrade to PRO
+        {/* Job Alerts Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg sm:text-xl">Job Alerts</CardTitle>
+            <CardDescription>Get notified about new jobs matching your criteria</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <p className="text-sm sm:text-base text-gray-600">
+                {session?.user?.subscriptionStatus === "PRO" 
+                  ? "Manage your customized job alerts" 
+                  : "Upgrade to PRO to create custom job alerts"}
+              </p>
+              <div>
+                {session?.user?.subscriptionStatus === "PRO" ? (
+                  <Link href="/alerts">
+                    <Button variant="link" className="text-blue-500 hover:text-blue-600 p-0 h-auto">
+                      Manage Alerts →
                     </Button>
-                  )}
-                </div>
+                  </Link>
+                ) : (
+                  <Button 
+                    variant="link" 
+                    className="text-blue-500 hover:text-blue-600 p-0 h-auto"
+                    onClick={handleSubscribe}
+                  >
+                    Upgrade to PRO →
+                  </Button>
+                )}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </main>
   );
@@ -508,7 +529,11 @@ function ProfileContent() {
 // Main page component with Suspense boundary for useSearchParams
 export default function ProfilePage() {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center h-screen">Loading profile...</div>}>
+    <Suspense fallback={
+      <div className="flex justify-center items-center h-screen">
+        <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    }>
       <ProfileContent />
     </Suspense>
   );

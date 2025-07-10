@@ -35,7 +35,7 @@ export default function ManageSubscriptionsPage() {
           plan: 'PRO',
           renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
           paymentMethod: '**** **** **** 4242',
-          price: '$9.99',
+          price: '$4.99',
           billingCycle: 'monthly',
           startDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString() // 60 days ago
         });

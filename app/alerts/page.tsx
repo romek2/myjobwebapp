@@ -436,7 +436,7 @@ export default function JobAlertsPage() {
             Our system prioritizes high-quality opportunities and exclusive positions not available to free users.
           </p>
           <p className="text-gray-700">
-            You can create up to 10 custom alerts with different criteria and notification frequencies.
+            You can create up to 3 custom alerts with different criteria and notification frequencies.
           </p>
         </CardContent>
       </Card>
