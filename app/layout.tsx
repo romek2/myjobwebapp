@@ -9,8 +9,8 @@ import Footer from '@/components/ui/footer';
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Resume Job Matcher',
-  description: 'Match your resume with job postings',
+  title: 'Job Matcher',
+  description: 'Match with job postings',
 }
 
 export default function RootLayout({
