@@ -80,11 +80,11 @@ export default function PricingPage() {
               </li>
               <li className="flex items-start">
                 <CheckIcon className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                <span>Resume Upload</span>
+                <span>Access to all public jobs</span>
               </li>
               <li className="flex items-start">
                 <CheckIcon className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                <span>Job filtering by location</span>
+                <span>Applications Tracker</span>
               </li>
             </ul>
           </div>
