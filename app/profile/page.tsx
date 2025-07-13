@@ -97,16 +97,14 @@ function ProfileContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Skills Profile State
-  const [profile, setProfile] = useState<UserProfile>({
-    skills: [
-      { id: '1', name: 'JavaScript', category: 'programming' },
-      { id: '2', name: 'React', category: 'framework' },
-      { id: '3', name: 'Node.js', category: 'framework' },
-    ],
-    experienceLevel: 'mid',
-    preferredLocation: 'remote',
-    jobTypes: ['Full-time'],
-  });
+const [profile, setProfile] = useState<UserProfile>({
+  skills: [], // Start with empty skills array instead of hardcoded ones
+  experienceLevel: 'mid',
+  preferredLocation: 'remote',
+  jobTypes: ['Full-time'],
+});
+
+
   
   const [showSkillsEditor, setShowSkillsEditor] = useState(false);
   const [newSkill, setNewSkill] = useState('');
@@ -266,30 +264,43 @@ function ProfileContent() {
   };
 
   // Skills Profile Functions
-  const addSkill = (skillName: string) => {
-    if (!skillName.trim()) return;
-    
-    const skill: Skill = {
-      id: Date.now().toString(),
-      name: skillName.trim(),
-      category: 'other'
-    };
-    
-    setProfile(prev => ({
-      ...prev,
-      skills: [...prev.skills, skill]
-    }));
-    
+ const addSkill = (skillName: string) => {
+  if (!skillName.trim()) return;
+  
+  // Check if skill already exists (case-insensitive)
+  const existingSkill = profile.skills.find(
+    skill => skill.name.toLowerCase() === skillName.trim().toLowerCase()
+  );
+  
+  if (existingSkill) {
+    // Skill already exists, show a brief message or just clear input
     setNewSkill('');
     setShowSuggestions(false);
+    return;
+  }
+  
+  const skill: Skill = {
+    id: `skill_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Better unique ID
+    name: skillName.trim(),
+    category: 'other'
   };
+  
+  setProfile(prev => ({
+    ...prev,
+    skills: [...prev.skills, skill]
+  }));
+  
+  setNewSkill('');
+  setShowSuggestions(false);
+};
 
-  const removeSkill = (skillId: string) => {
-    setProfile(prev => ({
-      ...prev,
-      skills: prev.skills.filter(skill => skill.id !== skillId)
-    }));
-  };
+// 3. Update your removeSkill function
+const removeSkill = (skillId: string) => {
+  setProfile(prev => ({
+    ...prev,
+    skills: prev.skills.filter(skill => skill.id !== skillId)
+  }));
+};
 
   const updateExperience = (level: UserProfile['experienceLevel']) => {
     setProfile(prev => ({ ...prev, experienceLevel: level }));
@@ -424,119 +435,135 @@ function ProfileContent() {
               <CardContent className="space-y-6">
                 
                 {/* Skills Section */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-medium text-gray-900">Your Skills</h3>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setShowSkillsEditor(!showSkillsEditor)}
-                    >
-                      {showSkillsEditor ? 'Done' : 'Edit Skills'}
-                    </Button>
-                  </div>
-                  
-                  {showSkillsEditor ? (
-                    <div className="space-y-3">
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <div className="relative flex-1">
-                          <input
-                            type="text"
-                            value={newSkill}
-                            onChange={(e) => {
-                              setNewSkill(e.target.value);
-                              setShowSuggestions(e.target.value.length > 0);
-                            }}
-                            placeholder="Add a skill (e.g., React, Python, AWS)"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            onKeyPress={(e) => {
-                              if (e.key === 'Enter') {
-                                addSkill(newSkill);
-                              }
-                            }}
-                          />
-                          
-                          {/* Skill Suggestions Dropdown */}
-                          {showSuggestions && newSkill && (
-                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
-                              {SKILL_SUGGESTIONS
-                                .filter(skill => 
-                                  skill.name.toLowerCase().includes(newSkill.toLowerCase()) &&
-                                  !profile.skills.some(userSkill => userSkill.name.toLowerCase() === skill.name.toLowerCase())
-                                )
-                                .slice(0, 5)
-                                .map((skill, index) => (
-                                  <button
-                                    key={index}
-                                    onClick={() => addSkill(skill.name)}
-                                    className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm first:rounded-t-lg last:rounded-b-lg"
-                                  >
-                                    <span className="font-medium">{skill.name}</span>
-                                    <span className="text-gray-500 ml-2 text-xs capitalize">
-                                      {skill.category}
-                                    </span>
-                                  </button>
-                                ))}
-                            </div>
-                          )}
-                        </div>
-                        <Button 
-                          size="sm" 
-                          onClick={() => addSkill(newSkill)}
-                          disabled={!newSkill.trim()}
-                          className="btn-primary"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      
-                      {/* Quick Add Popular Skills */}
-                      <div>
-                        <p className="text-xs text-gray-500 mb-2">Popular skills:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {SKILL_SUGGESTIONS
-                            .filter(skill => !profile.skills.some(userSkill => userSkill.name === skill.name))
-                            .slice(0, 6)
-                            .map((skill, index) => (
-                              <button
-                                key={index}
-                                onClick={() => addSkill(skill.name)}
-                                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs transition-colors"
-                              >
-                                + {skill.name}
-                              </button>
-                            ))}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {profile.skills.map((skill) => (
-                        <div key={skill.id} className="group relative">
-                          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium flex items-center gap-1">
-                            {skill.name}
-                            {showSkillsEditor && (
-                              <button
-                                onClick={() => removeSkill(skill.id)}
-                                className="ml-1 text-blue-600 hover:text-blue-800 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            )}
-                          </span>
-                        </div>
-                      ))}
-                      {profile.skills.length === 0 && (
-                        <button 
-                          onClick={() => setShowSkillsEditor(true)}
-                          className="px-3 py-1 border-2 border-dashed border-gray-300 text-gray-500 rounded-full text-sm hover:border-gray-400 transition-colors"
-                        >
-                          + Add your first skill
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
+               <div>
+  <div className="flex items-center justify-between mb-3">
+    <h3 className="font-medium text-gray-900">Your Skills</h3>
+    <Button 
+      variant="outline" 
+      size="sm" 
+      onClick={() => setShowSkillsEditor(!showSkillsEditor)}
+    >
+      {showSkillsEditor ? 'Done' : 'Edit Skills'}
+    </Button>
+  </div>
+  
+  {showSkillsEditor ? (
+    <div className="space-y-3">
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={newSkill}
+            onChange={(e) => {
+              setNewSkill(e.target.value);
+              setShowSuggestions(e.target.value.length > 0);
+            }}
+            placeholder="Add a skill (e.g., React, Python, AWS)"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && newSkill.trim()) {
+                e.preventDefault();
+                addSkill(newSkill);
+              }
+            }}
+          />
+          
+          {/* Skill Suggestions Dropdown */}
+          {showSuggestions && newSkill && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
+              {SKILL_SUGGESTIONS
+                .filter(skill => 
+                  skill.name.toLowerCase().includes(newSkill.toLowerCase()) &&
+                  !profile.skills.some(userSkill => userSkill.name.toLowerCase() === skill.name.toLowerCase())
+                )
+                .slice(0, 5)
+                .map((skill, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      addSkill(skill.name);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm first:rounded-t-lg last:rounded-b-lg"
+                  >
+                    <span className="font-medium">{skill.name}</span>
+                    <span className="text-gray-500 ml-2 text-xs capitalize">
+                      {skill.category}
+                    </span>
+                  </button>
+                ))}
+              {/* Show option to add custom skill if no exact matches */}
+              {newSkill.trim() && !SKILL_SUGGESTIONS.some(skill => 
+                skill.name.toLowerCase() === newSkill.toLowerCase()
+              ) && (
+                <button
+                  onClick={() => {
+                    addSkill(newSkill);
+                  }}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm rounded-lg border-t"
+                >
+                  <span className="font-medium">Add "{newSkill}"</span>
+                  <span className="text-gray-500 ml-2 text-xs">Custom skill</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+        <Button 
+          size="sm" 
+          onClick={() => addSkill(newSkill)}
+          disabled={!newSkill.trim()}
+          className="btn-primary"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+      
+      {/* Quick Add Popular Skills */}
+      <div>
+        <p className="text-xs text-gray-500 mb-2">Popular skills:</p>
+        <div className="flex flex-wrap gap-1">
+          {SKILL_SUGGESTIONS
+            .filter(skill => !profile.skills.some(userSkill => userSkill.name === skill.name))
+            .slice(0, 6)
+            .map((skill, index) => (
+              <button
+                key={index}
+                onClick={() => addSkill(skill.name)}
+                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs transition-colors"
+              >
+                + {skill.name}
+              </button>
+            ))}
+        </div>
+      </div>
+    </div>
+  ) : (
+    <div className="flex flex-wrap gap-2">
+      {profile.skills.map((skill) => (
+        <div key={skill.id} className="group relative">
+          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium flex items-center gap-1">
+            {skill.name}
+            <button
+              onClick={() => removeSkill(skill.id)}
+              className="ml-1 text-blue-600 hover:text-blue-800 hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+              title="Remove skill"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </span>
+        </div>
+      ))}
+      {profile.skills.length === 0 && (
+        <button 
+          onClick={() => setShowSkillsEditor(true)}
+          className="px-3 py-1 border-2 border-dashed border-gray-300 text-gray-500 rounded-full text-sm hover:border-gray-400 transition-colors"
+        >
+          + Add your first skill
+        </button>
+      )}
+    </div>
+  )}
+</div>
 
                 {/* Experience Level */}
                 <div>

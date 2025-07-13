@@ -117,7 +117,7 @@ export default function PricingPage() {
             <ul className="space-y-3">
               <li className="flex items-start">
                 <CheckIcon className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
-                <span><strong>Resume analysis</strong> to optimize for ATS</span>
+                <span><strong>Resume upload</strong> for quick apply</span>
               </li>
               <li className="flex items-start">
                 <CheckIcon className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
