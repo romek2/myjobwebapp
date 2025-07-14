@@ -1,12 +1,18 @@
-// app/profile/page.tsx
+// app/profile/page.tsx - Final version for your Supabase schema
 'use client';
 
 import { useSession } from 'next-auth/react';
 import { redirect, useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense } from 'react';
 import { RefreshCw } from 'lucide-react';
 
-// Component imports
+// Your updated hooks
+import { useProfile } from '@/hooks/useProfile';
+import { useSkills } from '@/hooks/useSkills';
+import { useResume } from '@/hooks/useResume';
+import { useJobAlerts } from '@/hooks/useJobAlerts';
+
+// Component imports (same as before)
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import SkillsProfile from '@/components/profile/SkillsProfile';
 import ResumeUpload from '@/components/profile/ResumeUpload';
@@ -14,41 +20,6 @@ import ApplicationTracker from '@/components/profile/ApplicationTracker';
 import SubscriptionManagement from '@/components/profile/SubscriptionManagement';
 import JobAlerts from '@/components/profile/JobAlerts';
 import QuickStats from '@/components/profile/QuickStats';
-
-// Types
-interface Skill {
-  id: string;
-  name: string;
-  category: 'programming' | 'framework' | 'tool' | 'soft' | 'other';
-}
-
-interface UserProfile {
-  skills: Skill[];
-  experienceLevel: 'entry' | 'mid' | 'senior' | 'lead';
-  preferredLocation: 'remote' | 'hybrid' | 'onsite' | 'no-preference';
-  salaryMin?: number;
-  salaryMax?: number;
-  jobTypes: string[];
-}
-
-interface JobAlert {
-  id: string;
-  name: string;
-  keywords: string;
-  frequency: 'daily' | 'weekly' | 'instant';
-  active: boolean;
-  created: string;
-  lastMatch?: string;
-}
-
-interface Application {
-  id: string;
-  jobTitle: string;
-  company: string;
-  status: string;
-  appliedDate: string;
-  location: string;
-}
 
 function ProfileContent() {
   const { data: session, status } = useSession({
@@ -59,25 +30,27 @@ function ProfileContent() {
   });
 
   const searchParams = useSearchParams();
-  const [isSubscribing, setIsSubscribing] = useState(false);
-  const [isManagingSubscription, setIsManagingSubscription] = useState(false);
-  
-  // Skills Profile State
-  const [profile, setProfile] = useState<UserProfile>({
-    skills: [],
-    experienceLevel: 'mid',
-    preferredLocation: 'remote',
-    jobTypes: ['Full-time'],
-  });
-  
-  // Get checkout status from URL parameters
   const checkoutStatus = searchParams.get("checkout");
-  
-  // Check if user is PRO
-  const isPro = session?.user?.subscriptionStatus === "PRO";
 
-  // Mock data for job applications
-  const [applications] = useState<Application[]>([
+  // Use your updated hooks
+  const {
+    profile,
+    setProfile,
+    resume,
+    jobAlerts,
+    setJobAlerts,
+    subscriptionStatus,
+    isPro,
+    isLoading: profileLoading,
+    updateProfile
+  } = useProfile();
+
+  const { addSkill, removeSkill } = useSkills();
+  const { uploadResume, deleteResume, isUploading } = useResume();
+  const { toggleAlert, deleteAlert } = useJobAlerts();
+
+  // Mock applications data (you can add a job_applications API later)
+  const applications = [
     {
       id: '1',
       jobTitle: 'Senior Frontend Developer',
@@ -93,105 +66,96 @@ function ProfileContent() {
       status: 'Interview',
       appliedDate: '2025-03-10',
       location: 'New York, NY',
-    },
-    {
-      id: '3',
-      jobTitle: 'React Developer',
-      company: 'AppWorks',
-      status: 'Rejected',
-      appliedDate: '2025-03-05',
-      location: 'San Francisco, CA',
     }
-  ]);
+  ];
 
-  // Mock job alerts data
-  const [jobAlerts, setJobAlerts] = useState<JobAlert[]>([
-    {
-      id: '1',
-      name: 'Senior React Developer',
-      keywords: 'React, TypeScript, Remote',
-      frequency: 'daily',
-      active: true,
-      created: '2025-03-01',
-      lastMatch: '2025-03-15',
-    },
-    {
-      id: '2',
-      name: 'Frontend Engineering Roles',
-      keywords: 'Frontend, JavaScript, Vue',
-      frequency: 'weekly',
-      active: false,
-      created: '2025-02-15',
+  // Enhanced skill management
+  const handleAddSkill = async (skillName: string, category: string = 'other') => {
+    try {
+      const newSkill = await addSkill(skillName, category);
+      setProfile(prev => ({
+        ...prev,
+        skills: [...prev.skills, newSkill]
+      }));
+      return newSkill;
+    } catch (error) {
+      console.error('Failed to add skill:', error);
+      throw error;
     }
-  ]);
+  };
 
-  // Handler functions
+  const handleRemoveSkill = async (skillId: number) => {
+    try {
+      await removeSkill(skillId);
+      setProfile(prev => ({
+        ...prev,
+        skills: prev.skills.filter(skill => skill.id !== skillId)
+      }));
+    } catch (error) {
+      console.error('Failed to remove skill:', error);
+      throw error;
+    }
+  };
+
+  // Subscription handlers
   const handleSubscribe = async () => {
     try {
-      setIsSubscribing(true);
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
 
       const data = await response.json();
-
       if (data.url) {
         window.location.href = data.url;
-      } else {
-        console.error("Failed to create checkout session:", data.error);
-        alert("Unable to start checkout process. Please try again.");
       }
     } catch (error) {
       console.error("Error subscribing:", error);
       alert("Something went wrong. Please try again.");
-    } finally {
-      setIsSubscribing(false);
     }
   };
 
   const handleManageSubscription = async () => {
     try {
-      setIsManagingSubscription(true);
-      
       const response = await fetch("/api/stripe/portal", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
       
       const data = await response.json();
-
       if (data.url) {
         window.location.href = data.url;
-      } else {
-        console.error("Failed to create portal session:", data.error);
-        alert(`Unable to open subscription management: ${data.error || "No URL returned"}`);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error managing subscription:", error);
-      alert(`Something went wrong: ${error.message || "Unknown error"}`);
-    } finally {
-      setIsManagingSubscription(false);
+      alert("Something went wrong. Please try again.");
     }
   };
 
-  const toggleJobAlert = (alertId: string) => {
-    setJobAlerts(prev => 
-      prev.map(alert => 
-        alert.id === alertId ? { ...alert, active: !alert.active } : alert
-      )
-    );
+  // Job alert handlers
+  const handleToggleJobAlert = async (alertId: string) => {
+    try {
+      await toggleAlert(alertId);
+      setJobAlerts(prev => 
+        prev.map(alert => 
+          alert.id === alertId ? { ...alert, active: !alert.active } : alert
+        )
+      );
+    } catch (error) {
+      console.error('Failed to toggle alert:', error);
+    }
   };
 
-  const deleteJobAlert = (alertId: string) => {
-    setJobAlerts(prev => prev.filter(alert => alert.id !== alertId));
+  const handleDeleteJobAlert = async (alertId: string) => {
+    try {
+      await deleteAlert(alertId);
+      setJobAlerts(prev => prev.filter(alert => alert.id !== alertId));
+    } catch (error) {
+      console.error('Failed to delete alert:', error);
+    }
   };
 
-  if (status === "loading") {
+  if (status === "loading" || profileLoading) {
     return (
       <main className="min-h-screen p-4 sm:p-8">
         <div className="max-w-4xl mx-auto">
@@ -218,19 +182,26 @@ function ProfileContent() {
           {/* Left Column - Main Content */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Skills Profile Builder */}
+            {/* Skills Profile with Real Data */}
             <SkillsProfile
               profile={profile}
               setProfile={setProfile}
               isPro={isPro}
               onSubscribe={handleSubscribe}
+              onAddSkill={handleAddSkill}
+              onRemoveSkill={handleRemoveSkill}
+              onUpdateProfile={updateProfile}
             />
 
-            {/* Resume Upload */}
+            {/* Resume Upload with Existing user_resumes Table */}
             <ResumeUpload
               isPro={isPro}
               onSubscribe={handleSubscribe}
-              isSubscribing={isSubscribing}
+              isSubscribing={false}
+              resume={resume}
+              onUpload={uploadResume}
+              onDelete={deleteResume}
+              isUploading={isUploading}
             />
 
             {/* Application Tracker */}
@@ -245,18 +216,18 @@ function ProfileContent() {
             {/* Subscription Management */}
             <SubscriptionManagement
               isPro={isPro}
-              isSubscribing={isSubscribing}
-              isManagingSubscription={isManagingSubscription}
+              isSubscribing={false}
+              isManagingSubscription={false}
               onSubscribe={handleSubscribe}
               onManageSubscription={handleManageSubscription}
             />
 
-            {/* Job Alerts */}
+            {/* Job Alerts with Real Data */}
             <JobAlerts
               isPro={isPro}
               jobAlerts={jobAlerts}
-              onToggleAlert={toggleJobAlert}
-              onDeleteAlert={deleteJobAlert}
+              onToggleAlert={handleToggleJobAlert}
+              onDeleteAlert={handleDeleteJobAlert}
               onSubscribe={handleSubscribe}
             />
 
@@ -274,7 +245,7 @@ function ProfileContent() {
   );
 }
 
-// Main page component with Suspense boundary for useSearchParams
+// Main page component with Suspense boundary
 export default function ProfilePage() {
   return (
     <Suspense fallback={
