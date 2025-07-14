@@ -50,25 +50,7 @@ function ProfileContent() {
   const { uploadResume, deleteResume, isUploading } = useResume();
   const { toggleAlert, deleteAlert } = useJobAlerts();
 
-  // Mock applications data (you can add a job_applications API later)
-  const applications = [
-    {
-      id: '1',
-      jobTitle: 'Senior Frontend Developer',
-      company: 'TechCorp Inc.',
-      status: 'Applied',
-      appliedDate: '2025-03-15',
-      location: 'Remote',
-    },
-    {
-      id: '2',
-      jobTitle: 'Full Stack Engineer',
-      company: 'WebSolutions LLC',
-      status: 'Interview',
-      appliedDate: '2025-03-10',
-      location: 'New York, NY',
-    }
-  ];
+
 
   // Enhanced skill management
   const handleAddSkill = async (skillName: string, category: string = 'other') => {
@@ -206,9 +188,7 @@ function ProfileContent() {
             />
 
             {/* Application Tracker */}
-            <ApplicationTracker
-              applications={applications}
-            />
+           <ApplicationTracker /> 
           </div>
 
           {/* Right Column - Sidebar */}
@@ -234,7 +214,7 @@ function ProfileContent() {
 
             {/* Quick Stats */}
             <QuickStats
-              applications={applications}
+              
               skillsCount={profile.skills.length}
               jobAlerts={jobAlerts}
               isPro={isPro}

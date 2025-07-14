@@ -1,4 +1,4 @@
-// components/profile/QuickStats.tsx
+// components/profile/QuickStats.tsx - FIXED: Uses real tracking data
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,29 +9,23 @@ import {
   Star, 
   Bell 
 } from 'lucide-react';
-
-interface JobAlert {
-  id: string;
-  active: boolean;
-}
-
-interface Application {
-  id: string;
-}
+import { JobAlert } from '@/types';
+import { useJobTracking } from '@/hooks/useJobTracking';
 
 interface QuickStatsProps {
-  applications: Application[];
   skillsCount: number;
   jobAlerts: JobAlert[];
   isPro: boolean;
 }
 
 export default function QuickStats({ 
-  applications, 
   skillsCount, 
   jobAlerts, 
   isPro 
 }: QuickStatsProps) {
+  // ✅ FIXED: Get real tracking data from hook
+  const { activity, isLoading } = useJobTracking();
+
   return (
     <Card>
       <CardHeader>
@@ -43,17 +37,21 @@ export default function QuickStats({
       <CardContent>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Profile Views</span>
+            <span className="text-sm text-gray-600">Jobs Viewed</span>
             <div className="flex items-center gap-1">
               <Eye className="h-4 w-4 text-blue-500" />
-              <span className="font-medium">12</span>
+              <span className="font-medium">
+                {isLoading ? '-' : activity.stats.totalViews}
+              </span>
             </div>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Applications</span>
             <div className="flex items-center gap-1">
               <Briefcase className="h-4 w-4 text-green-500" />
-              <span className="font-medium">{applications.length}</span>
+              <span className="font-medium">
+                {isLoading ? '-' : activity.stats.totalApplications}
+              </span>
             </div>
           </div>
           <div className="flex items-center justify-between">
