@@ -5,7 +5,7 @@ import { createServerSupabase } from '@/lib/supabase';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  context: { params: { jobId: string } }  // ✅ FIXED: correct typing
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -21,7 +21,7 @@ export async function POST(
       .from('user_job_applications')
       .insert({
         user_id: session.user.id,
-        job_id: params.jobId,
+        job_id: context.params.jobId,  // ✅ FIXED: use context.params
         job_title,
         company,
         application_url,
@@ -41,3 +41,5 @@ export async function POST(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+// app/api/profile/activity/route.ts - Get user's job activity

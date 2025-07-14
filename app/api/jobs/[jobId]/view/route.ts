@@ -1,4 +1,3 @@
-// app/api/jobs/[jobId]/view/route.ts - Track job views
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -6,7 +5,7 @@ import { createServerSupabase } from '@/lib/supabase';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  context: { params: { jobId: string } }  // ✅ FIXED: correct typing
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -22,7 +21,7 @@ export async function POST(
       .from('user_job_views')
       .upsert({
         user_id: session.user.id,
-        job_id: params.jobId,
+        job_id: context.params.jobId,  // ✅ FIXED: use context.params
         source: source || 'direct',
         viewed_at: new Date().toISOString()
       }, {
@@ -40,4 +39,3 @@ export async function POST(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-

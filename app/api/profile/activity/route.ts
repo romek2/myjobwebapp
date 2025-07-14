@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -14,15 +15,7 @@ export async function GET() {
     // Get recent applications
     const { data: applications } = await supabase
       .from('user_job_applications')
-      .select(`
-        *,
-        Job:job_id (
-          title,
-          company,
-          location,
-          salary
-        )
-      `)
+      .select('*')
       .eq('user_id', session.user.id)
       .order('applied_at', { ascending: false })
       .limit(10);
@@ -30,15 +23,7 @@ export async function GET() {
     // Get recent views
     const { data: views } = await supabase
       .from('user_job_views')
-      .select(`
-        *,
-        Job:job_id (
-          title,
-          company,
-          location,
-          salary
-        )
-      `)
+      .select('*')
       .eq('user_id', session.user.id)
       .order('viewed_at', { ascending: false })
       .limit(20);
