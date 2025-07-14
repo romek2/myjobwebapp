@@ -20,6 +20,7 @@ import ApplicationTracker from '@/components/profile/ApplicationTracker';
 import SubscriptionManagement from '@/components/profile/SubscriptionManagement';
 import JobAlerts from '@/components/profile/JobAlerts';
 import QuickStats from '@/components/profile/QuickStats';
+import { UserProfile, Skill, Resume, JobAlert } from '@/types';
 
 function ProfileContent() {
   const { data: session, status } = useSession({

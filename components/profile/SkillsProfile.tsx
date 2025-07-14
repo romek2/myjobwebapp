@@ -1,38 +1,30 @@
-// components/profile/SkillsProfile.tsx
+// components/profile/SkillsProfile.tsx - CORRECTED VERSION
 'use client';
 
 import { useState } from 'react';
+import { UserProfile, Skill } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Building, 
   Briefcase, 
   MapPin, 
   DollarSign, 
   Plus, 
-  X 
+  X,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
-
-interface Skill {
-  id: string;
-  name: string;
-  category: 'programming' | 'framework' | 'tool' | 'soft' | 'other';
-}
-
-interface UserProfile {
-  skills: Skill[];
-  experienceLevel: 'entry' | 'mid' | 'senior' | 'lead';
-  preferredLocation: 'remote' | 'hybrid' | 'onsite' | 'no-preference';
-  salaryMin?: number;
-  salaryMax?: number;
-  jobTypes: string[];
-}
 
 interface SkillsProfileProps {
   profile: UserProfile;
   setProfile: React.Dispatch<React.SetStateAction<UserProfile>>;
   isPro: boolean;
   onSubscribe: () => void;
+  onAddSkill: (name: string, category?: string) => Promise<Skill>;  // ✅ Added missing props
+  onRemoveSkill: (skillId: number) => Promise<void>;  // ✅ Added missing props
+  onUpdateProfile: (updates: Partial<UserProfile>) => Promise<boolean>;  // ✅ Added missing props
 }
 
 const SKILL_SUGGESTIONS = [
@@ -57,12 +49,23 @@ const EXPERIENCE_LEVELS = [
   { value: 'lead', label: 'Lead/Principal', description: '8+ years' },
 ] as const;
 
-export default function SkillsProfile({ profile, setProfile, isPro, onSubscribe }: SkillsProfileProps) {
+export default function SkillsProfile({ 
+  profile, 
+  setProfile, 
+  isPro, 
+  onSubscribe,
+  onAddSkill,        // ✅ Use these props from parent
+  onRemoveSkill,     // ✅ Use these props from parent
+  onUpdateProfile    // ✅ Use these props from parent
+}: SkillsProfileProps) {
   const [showSkillsEditor, setShowSkillsEditor] = useState(false);
   const [newSkill, setNewSkill] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [localError, setLocalError] = useState('');
 
-  const addSkill = (skillName: string) => {
+  // ✅ FIXED: Use the handler props from parent instead of local logic
+  const handleAddSkill = async (skillName: string) => {
     if (!skillName.trim()) return;
     
     const existingSkill = profile.skills.find(
@@ -70,48 +73,58 @@ export default function SkillsProfile({ profile, setProfile, isPro, onSubscribe 
     );
     
     if (existingSkill) {
+      setLocalError('Skill already exists');
       setNewSkill('');
       setShowSuggestions(false);
+      setTimeout(() => setLocalError(''), 3000);
       return;
     }
-    
-    const skill: Skill = {
-      id: `skill_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: skillName.trim(),
-      category: 'other'
-    };
-    
-    setProfile(prev => ({
-      ...prev,
-      skills: [...prev.skills, skill]
-    }));
-    
-    setNewSkill('');
-    setShowSuggestions(false);
+
+    try {
+      setIsLoading(true);
+      await onAddSkill(skillName.trim());  // ✅ Use parent handler
+      setNewSkill('');
+      setShowSuggestions(false);
+      setLocalError('');
+    } catch (error) {
+      setLocalError('Failed to add skill. Please try again.');
+      setTimeout(() => setLocalError(''), 3000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const removeSkill = (skillId: string) => {
-    setProfile(prev => ({
-      ...prev,
-      skills: prev.skills.filter(skill => skill.id !== skillId)
-    }));
+  // ✅ FIXED: Use the handler props from parent
+  const handleRemoveSkill = async (skillId: number) => {
+    try {
+      setIsLoading(true);
+      await onRemoveSkill(skillId);  // ✅ Use parent handler
+    } catch (error) {
+      setLocalError('Failed to remove skill. Please try again.');
+      setTimeout(() => setLocalError(''), 3000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const updateExperience = (level: UserProfile['experienceLevel']) => {
-    setProfile(prev => ({ ...prev, experienceLevel: level }));
+  // ✅ FIXED: Use correct property names and parent handler
+  const updateExperience = async (level: UserProfile['experience_level']) => {
+    setProfile(prev => ({ ...prev, experience_level: level }));
+    await onUpdateProfile({ experience_level: level });
   };
 
-  const updateLocation = (location: UserProfile['preferredLocation']) => {
-    setProfile(prev => ({ ...prev, preferredLocation: location }));
+  const updateLocation = async (location: UserProfile['preferred_location']) => {
+    setProfile(prev => ({ ...prev, preferred_location: location }));
+    await onUpdateProfile({ preferred_location: location });
   };
 
   const calculateCompleteness = () => {
     let score = 0;
     if (profile.skills.length > 0) score += 30;
     if (profile.skills.length >= 5) score += 20;
-    if (profile.experienceLevel) score += 20;
-    if (profile.preferredLocation) score += 15;
-    if (profile.salaryMin && profile.salaryMax) score += 15;
+    if (profile.experience_level) score += 20;  // ✅ Fixed property name
+    if (profile.preferred_location) score += 15;  // ✅ Fixed property name
+    if (profile.salary_min && profile.salary_max) score += 15;  // ✅ Fixed property names
     return Math.min(score, 100);
   };
 
@@ -133,6 +146,14 @@ export default function SkillsProfile({ profile, setProfile, isPro, onSubscribe 
       </CardHeader>
       <CardContent className="space-y-6">
         
+        {/* Error Alert */}
+        {localError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{localError}</AlertDescription>
+          </Alert>
+        )}
+        
         {/* Skills Section */}
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -141,8 +162,11 @@ export default function SkillsProfile({ profile, setProfile, isPro, onSubscribe 
               variant="outline" 
               size="sm" 
               onClick={() => setShowSkillsEditor(!showSkillsEditor)}
+              disabled={isLoading}
             >
-              {showSkillsEditor ? 'Done' : 'Edit Skills'}
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : showSkillsEditor ? 'Done' : 'Edit Skills'}
             </Button>
           </div>
           
@@ -156,15 +180,17 @@ export default function SkillsProfile({ profile, setProfile, isPro, onSubscribe 
                     onChange={(e) => {
                       setNewSkill(e.target.value);
                       setShowSuggestions(e.target.value.length > 0);
+                      setLocalError('');
                     }}
                     placeholder="Add a skill (e.g., React, Python, AWS)"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' && newSkill.trim()) {
                         e.preventDefault();
-                        addSkill(newSkill);
+                        handleAddSkill(newSkill);
                       }
                     }}
+                    disabled={isLoading}
                   />
                   
                   {/* Skill Suggestions Dropdown */}
@@ -179,8 +205,9 @@ export default function SkillsProfile({ profile, setProfile, isPro, onSubscribe 
                         .map((skill, index) => (
                           <button
                             key={index}
-                            onClick={() => addSkill(skill.name)}
+                            onClick={() => handleAddSkill(skill.name)}
                             className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm first:rounded-t-lg last:rounded-b-lg"
+                            disabled={isLoading}
                           >
                             <span className="font-medium">{skill.name}</span>
                             <span className="text-gray-500 ml-2 text-xs capitalize">
@@ -192,8 +219,9 @@ export default function SkillsProfile({ profile, setProfile, isPro, onSubscribe 
                         skill.name.toLowerCase() === newSkill.toLowerCase()
                       ) && (
                         <button
-                          onClick={() => addSkill(newSkill)}
+                          onClick={() => handleAddSkill(newSkill)}
                           className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm rounded-lg border-t"
+                          disabled={isLoading}
                         >
                           <span className="font-medium">Add "{newSkill}"</span>
                           <span className="text-gray-500 ml-2 text-xs">Custom skill</span>
@@ -204,11 +232,15 @@ export default function SkillsProfile({ profile, setProfile, isPro, onSubscribe 
                 </div>
                 <Button 
                   size="sm" 
-                  onClick={() => addSkill(newSkill)}
-                  disabled={!newSkill.trim()}
+                  onClick={() => handleAddSkill(newSkill)}
+                  disabled={!newSkill.trim() || isLoading}
                   className="btn-primary"
                 >
-                  <Plus className="h-4 w-4" />
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
               
@@ -222,8 +254,9 @@ export default function SkillsProfile({ profile, setProfile, isPro, onSubscribe 
                     .map((skill, index) => (
                       <button
                         key={index}
-                        onClick={() => addSkill(skill.name)}
-                        className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs transition-colors"
+                        onClick={() => handleAddSkill(skill.name)}
+                        className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs transition-colors disabled:opacity-50"
+                        disabled={isLoading}
                       >
                         + {skill.name}
                       </button>
@@ -238,11 +271,16 @@ export default function SkillsProfile({ profile, setProfile, isPro, onSubscribe 
                   <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium flex items-center gap-1">
                     {skill.name}
                     <button
-                      onClick={() => removeSkill(skill.id)}
-                      className="ml-1 text-blue-600 hover:text-blue-800 hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                      onClick={() => handleRemoveSkill(skill.id)}
+                      className="ml-1 text-blue-600 hover:text-blue-800 hover:bg-blue-200 rounded-full p-0.5 transition-colors disabled:opacity-50"
                       title="Remove skill"
+                      disabled={isLoading}
                     >
-                      <X className="h-3 w-3" />
+                      {isLoading ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <X className="h-3 w-3" />
+                      )}
                     </button>
                   </span>
                 </div>
@@ -271,7 +309,7 @@ export default function SkillsProfile({ profile, setProfile, isPro, onSubscribe 
                 key={level.value}
                 onClick={() => updateExperience(level.value)}
                 className={`p-3 text-sm border rounded-lg transition-colors text-center ${
-                  profile.experienceLevel === level.value
+                  profile.experience_level === level.value  // ✅ Fixed property name
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
                     : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
                 }`}
@@ -291,8 +329,8 @@ export default function SkillsProfile({ profile, setProfile, isPro, onSubscribe 
               Preferred Location
             </label>
             <select 
-              value={profile.preferredLocation}
-              onChange={(e) => updateLocation(e.target.value as UserProfile['preferredLocation'])}
+              value={profile.preferred_location}  // ✅ Fixed property name
+              onChange={(e) => updateLocation(e.target.value as UserProfile['preferred_location'])}
               className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="remote">Remote</option>
@@ -311,15 +349,23 @@ export default function SkillsProfile({ profile, setProfile, isPro, onSubscribe 
               <input
                 type="number"
                 placeholder="Min"
-                value={profile.salaryMin || ''}
-                onChange={(e) => setProfile(prev => ({ ...prev, salaryMin: parseInt(e.target.value) || undefined }))}
+                value={profile.salary_min || ''}  // ✅ Fixed property name
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || undefined;
+                  setProfile(prev => ({ ...prev, salary_min: value }));
+                }}
+                onBlur={() => onUpdateProfile({ salary_min: profile.salary_min })}
                 className="p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <input
                 type="number"
                 placeholder="Max"
-                value={profile.salaryMax || ''}
-                onChange={(e) => setProfile(prev => ({ ...prev, salaryMax: parseInt(e.target.value) || undefined }))}
+                value={profile.salary_max || ''}  // ✅ Fixed property name
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || undefined;
+                  setProfile(prev => ({ ...prev, salary_max: value }));
+                }}
+                onBlur={() => onUpdateProfile({ salary_max: profile.salary_max })}
                 className="p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>

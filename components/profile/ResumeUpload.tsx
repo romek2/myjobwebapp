@@ -1,4 +1,4 @@
-// components/profile/ResumeUpload.tsx
+// components/profile/ResumeUpload.tsx - FIXED with missing props
 'use client';
 
 import { useState, useRef } from 'react';
@@ -12,18 +12,30 @@ import {
   RefreshCw, 
   Star 
 } from 'lucide-react';
+import { Resume } from '@/types';
 
+// ✅ FIXED: Added missing props that your main page is passing
 interface ResumeUploadProps {
   isPro: boolean;
   onSubscribe: () => void;
   isSubscribing: boolean;
+  resume: Resume | null;                    // ✅ Added missing prop
+  onUpload: (file: File) => Promise<any>;   // ✅ Added missing prop
+  onDelete: () => Promise<boolean>;         // ✅ Added missing prop
+  isUploading: boolean;                     // ✅ Added missing prop
 }
 
-export default function ResumeUpload({ isPro, onSubscribe, isSubscribing }: ResumeUploadProps) {
-  const [isUploading, setIsUploading] = useState(false);
+export default function ResumeUpload({ 
+  isPro, 
+  onSubscribe, 
+  isSubscribing,
+  resume,        // ✅ Use resume from props instead of local state
+  onUpload,      // ✅ Use upload handler from props
+  onDelete,      // ✅ Use delete handler from props
+  isUploading    // ✅ Use loading state from props
+}: ResumeUploadProps) {
   const [uploadError, setUploadError] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState('');
-  const [resumeData, setResumeData] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = () => {
@@ -53,40 +65,32 @@ export default function ResumeUpload({ isPro, onSubscribe, isSubscribing }: Resu
     }
 
     setUploadError('');
-    setIsUploading(true);
 
     try {
-      // Simulate upload - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // ✅ FIXED: Use the onUpload prop instead of simulating
+      await onUpload(file);
       setUploadSuccess(`Successfully uploaded ${file.name}`);
-      
-      // Mock resume data - replace with actual response
-      setResumeData({
-        filename: file.name,
-        uploadedAt: new Date().toISOString(),
-        atsScore: 85,
-        techStack: ['React', 'TypeScript', 'Node.js', 'Python', 'AWS', 'Docker']
-      });
+      setUploadError('');
       
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     } catch (error) {
-      console.error('Error uploading resume:', error);
-      setUploadError('Failed to upload resume. Please try again.');
-    } finally {
-      setIsUploading(false);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload resume';
+      setUploadError(errorMessage);
+      setUploadSuccess('');
     }
   };
 
-  const deleteResume = async () => {
+  const handleDelete = async () => {
     try {
-      setResumeData(null);
+      // ✅ FIXED: Use the onDelete prop instead of local logic
+      await onDelete();
       setUploadSuccess('Resume deleted successfully');
       setUploadError('');
     } catch (error) {
-      console.error('Error deleting resume:', error);
-      setUploadError('Failed to delete resume. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete resume';
+      setUploadError(errorMessage);
     }
   };
 
@@ -121,7 +125,7 @@ export default function ResumeUpload({ isPro, onSubscribe, isSubscribing }: Resu
               </Alert>
             )}
 
-            {!resumeData ? (
+            {!resume ? (
               <div className="space-y-4">
                 {/* Upload Area */}
                 <div 
@@ -157,38 +161,39 @@ export default function ResumeUpload({ isPro, onSubscribe, isSubscribing }: Resu
                     <div className="flex items-start gap-3">
                       <FileText className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium break-words text-sm sm:text-base">{resumeData.filename}</p>
+                        {/* ✅ FIXED: Use resume prop data with proper property names */}
+                        <p className="font-medium break-words text-sm sm:text-base">{resume.filename}</p>
                         <p className="text-xs text-gray-500">
-                          Uploaded on {new Date(resumeData.uploadedAt || resumeData.updated_at).toLocaleDateString()}
+                          Uploaded on {new Date(resume.created_at).toLocaleDateString()}
                         </p>
                         
                         {/* Analysis Results */}
                         <div className="mt-3 grid grid-cols-2 gap-3">
                           <div className="bg-green-50 p-3 rounded-lg">
                             <p className="text-xs text-green-600 font-medium">ATS Score</p>
-                            <p className="text-lg font-bold text-green-700">{resumeData.atsScore || resumeData.ats_score || 0}%</p>
+                            <p className="text-lg font-bold text-green-700">{resume.ats_score || 0}%</p>
                           </div>
                           <div className="bg-blue-50 p-3 rounded-lg">
                             <p className="text-xs text-blue-600 font-medium">Skills Detected</p>
                             <p className="text-lg font-bold text-blue-700">
-                              {resumeData.techStack?.length || resumeData.tech_stack?.length || 0}
+                              {resume.tech_stack?.length || 0}
                             </p>
                           </div>
                         </div>
                         
                         {/* Skills */}
-                        {(resumeData.techStack || resumeData.tech_stack) && (
+                        {resume.tech_stack && resume.tech_stack.length > 0 && (
                           <div className="mt-3">
                             <p className="text-xs text-gray-600 font-medium mb-2">Detected Skills:</p>
                             <div className="flex flex-wrap gap-1">
-                              {(resumeData.techStack || resumeData.tech_stack).slice(0, 10).map((skill: string, index: number) => (
+                              {resume.tech_stack.slice(0, 10).map((skill: string, index: number) => (
                                 <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                                   {skill}
                                 </span>
                               ))}
-                              {(resumeData.techStack || resumeData.tech_stack).length > 10 && (
+                              {resume.tech_stack.length > 10 && (
                                 <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                                  +{(resumeData.techStack || resumeData.tech_stack).length - 10} more
+                                  +{resume.tech_stack.length - 10} more
                                 </span>
                               )}
                             </div>
@@ -203,14 +208,16 @@ export default function ResumeUpload({ isPro, onSubscribe, isSubscribing }: Resu
                         size="sm" 
                         onClick={handleFileUpload}
                         className="text-xs sm:text-sm"
+                        disabled={isUploading}
                       >
                         Replace
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={deleteResume}
+                        onClick={handleDelete}
                         className="text-xs sm:text-sm text-red-600 hover:text-red-700 hover:bg-red-50"
+                        disabled={isUploading}
                       >
                         Delete
                       </Button>

@@ -1,4 +1,4 @@
-// components/profile/JobAlerts.tsx
+// components/profile/JobAlerts.tsx - FIXED: Removed duplicate interface
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -11,16 +11,7 @@ import {
   PlayCircle, 
   Trash2 
 } from 'lucide-react';
-
-interface JobAlert {
-  id: string;
-  name: string;
-  keywords: string;
-  frequency: 'daily' | 'weekly' | 'instant';
-  active: boolean;
-  created: string;
-  lastMatch?: string;
-}
+import { JobAlert } from '@/types';  // ✅ Import from shared types instead of defining locally
 
 interface JobAlertsProps {
   isPro: boolean;
@@ -69,11 +60,10 @@ export default function JobAlerts({
                           <p className="text-xs text-gray-500 mt-1">{alert.keywords}</p>
                           <div className="flex items-center gap-2 mt-2">
                             <span className="text-xs text-gray-400 capitalize">{alert.frequency}</span>
-                            {alert.lastMatch && (
-                              <span className="text-xs text-green-600">
-                                Last match: {new Date(alert.lastMatch).toLocaleDateString()}
-                              </span>
-                            )}
+                            {/* ✅ FIXED: Use createdAt from shared types instead of lastMatch */}
+                            <span className="text-xs text-green-600">
+                              Created: {new Date(alert.createdAt).toLocaleDateString()}
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
