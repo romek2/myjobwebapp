@@ -95,17 +95,16 @@ function ProfileContent() {
   const [uploadError, setUploadError] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [resumeData, setResumeData] = useState<any>(null);
   
   // Skills Profile State
-const [profile, setProfile] = useState<UserProfile>({
-  skills: [], // Start with empty skills array instead of hardcoded ones
-  experienceLevel: 'mid',
-  preferredLocation: 'remote',
-  jobTypes: ['Full-time'],
-});
+  const [profile, setProfile] = useState<UserProfile>({
+    skills: [], // Start with empty skills array instead of hardcoded ones
+    experienceLevel: 'mid',
+    preferredLocation: 'remote',
+    jobTypes: ['Full-time'],
+  });
 
-
-  
   const [showSkillsEditor, setShowSkillsEditor] = useState(false);
   const [newSkill, setNewSkill] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -262,45 +261,44 @@ const [profile, setProfile] = useState<UserProfile>({
       setIsUploading(false);
     }
   };
-
+  
   // Skills Profile Functions
- const addSkill = (skillName: string) => {
-  if (!skillName.trim()) return;
-  
-  // Check if skill already exists (case-insensitive)
-  const existingSkill = profile.skills.find(
-    skill => skill.name.toLowerCase() === skillName.trim().toLowerCase()
-  );
-  
-  if (existingSkill) {
-    // Skill already exists, show a brief message or just clear input
+  const addSkill = (skillName: string) => {
+    if (!skillName.trim()) return;
+    
+    // Check if skill already exists (case-insensitive)
+    const existingSkill = profile.skills.find(
+      skill => skill.name.toLowerCase() === skillName.trim().toLowerCase()
+    );
+    
+    if (existingSkill) {
+      // Skill already exists, show a brief message or just clear input
+      setNewSkill('');
+      setShowSuggestions(false);
+      return;
+    }
+    
+    const skill: Skill = {
+      id: `skill_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Better unique ID
+      name: skillName.trim(),
+      category: 'other'
+    };
+    
+    setProfile(prev => ({
+      ...prev,
+      skills: [...prev.skills, skill]
+    }));
+    
     setNewSkill('');
     setShowSuggestions(false);
-    return;
-  }
-  
-  const skill: Skill = {
-    id: `skill_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Better unique ID
-    name: skillName.trim(),
-    category: 'other'
   };
-  
-  setProfile(prev => ({
-    ...prev,
-    skills: [...prev.skills, skill]
-  }));
-  
-  setNewSkill('');
-  setShowSuggestions(false);
-};
 
-// 3. Update your removeSkill function
-const removeSkill = (skillId: string) => {
-  setProfile(prev => ({
-    ...prev,
-    skills: prev.skills.filter(skill => skill.id !== skillId)
-  }));
-};
+  const removeSkill = (skillId: string) => {
+    setProfile(prev => ({
+      ...prev,
+      skills: prev.skills.filter(skill => skill.id !== skillId)
+    }));
+  };
 
   const updateExperience = (level: UserProfile['experienceLevel']) => {
     setProfile(prev => ({ ...prev, experienceLevel: level }));
@@ -320,6 +318,18 @@ const removeSkill = (skillId: string) => {
 
   const deleteJobAlert = (alertId: string) => {
     setJobAlerts(prev => prev.filter(alert => alert.id !== alertId));
+  };
+
+  const deleteResume = async () => {
+    try {
+      // Simulate delete operation - replace with actual API call
+      setResumeData(null);
+      setUploadSuccess('Resume deleted successfully');
+      setUploadError('');
+    } catch (error) {
+      console.error('Error deleting resume:', error);
+      setUploadError('Failed to delete resume. Please try again.');
+    }
   };
 
   const calculateCompleteness = () => {
@@ -435,135 +445,135 @@ const removeSkill = (skillId: string) => {
               <CardContent className="space-y-6">
                 
                 {/* Skills Section */}
-               <div>
-  <div className="flex items-center justify-between mb-3">
-    <h3 className="font-medium text-gray-900">Your Skills</h3>
-    <Button 
-      variant="outline" 
-      size="sm" 
-      onClick={() => setShowSkillsEditor(!showSkillsEditor)}
-    >
-      {showSkillsEditor ? 'Done' : 'Edit Skills'}
-    </Button>
-  </div>
-  
-  {showSkillsEditor ? (
-    <div className="space-y-3">
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="relative flex-1">
-          <input
-            type="text"
-            value={newSkill}
-            onChange={(e) => {
-              setNewSkill(e.target.value);
-              setShowSuggestions(e.target.value.length > 0);
-            }}
-            placeholder="Add a skill (e.g., React, Python, AWS)"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onKeyPress={(e) => {
-              if (e.key === 'Enter' && newSkill.trim()) {
-                e.preventDefault();
-                addSkill(newSkill);
-              }
-            }}
-          />
-          
-          {/* Skill Suggestions Dropdown */}
-          {showSuggestions && newSkill && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
-              {SKILL_SUGGESTIONS
-                .filter(skill => 
-                  skill.name.toLowerCase().includes(newSkill.toLowerCase()) &&
-                  !profile.skills.some(userSkill => userSkill.name.toLowerCase() === skill.name.toLowerCase())
-                )
-                .slice(0, 5)
-                .map((skill, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      addSkill(skill.name);
-                    }}
-                    className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm first:rounded-t-lg last:rounded-b-lg"
-                  >
-                    <span className="font-medium">{skill.name}</span>
-                    <span className="text-gray-500 ml-2 text-xs capitalize">
-                      {skill.category}
-                    </span>
-                  </button>
-                ))}
-              {/* Show option to add custom skill if no exact matches */}
-              {newSkill.trim() && !SKILL_SUGGESTIONS.some(skill => 
-                skill.name.toLowerCase() === newSkill.toLowerCase()
-              ) && (
-                <button
-                  onClick={() => {
-                    addSkill(newSkill);
-                  }}
-                  className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm rounded-lg border-t"
-                >
-                  <span className="font-medium">Add "{newSkill}"</span>
-                  <span className="text-gray-500 ml-2 text-xs">Custom skill</span>
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-        <Button 
-          size="sm" 
-          onClick={() => addSkill(newSkill)}
-          disabled={!newSkill.trim()}
-          className="btn-primary"
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-      </div>
-      
-      {/* Quick Add Popular Skills */}
-      <div>
-        <p className="text-xs text-gray-500 mb-2">Popular skills:</p>
-        <div className="flex flex-wrap gap-1">
-          {SKILL_SUGGESTIONS
-            .filter(skill => !profile.skills.some(userSkill => userSkill.name === skill.name))
-            .slice(0, 6)
-            .map((skill, index) => (
-              <button
-                key={index}
-                onClick={() => addSkill(skill.name)}
-                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs transition-colors"
-              >
-                + {skill.name}
-              </button>
-            ))}
-        </div>
-      </div>
-    </div>
-  ) : (
-    <div className="flex flex-wrap gap-2">
-      {profile.skills.map((skill) => (
-        <div key={skill.id} className="group relative">
-          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium flex items-center gap-1">
-            {skill.name}
-            <button
-              onClick={() => removeSkill(skill.id)}
-              className="ml-1 text-blue-600 hover:text-blue-800 hover:bg-blue-200 rounded-full p-0.5 transition-colors"
-              title="Remove skill"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </span>
-        </div>
-      ))}
-      {profile.skills.length === 0 && (
-        <button 
-          onClick={() => setShowSkillsEditor(true)}
-          className="px-3 py-1 border-2 border-dashed border-gray-300 text-gray-500 rounded-full text-sm hover:border-gray-400 transition-colors"
-        >
-          + Add your first skill
-        </button>
-      )}
-    </div>
-  )}
-</div>
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium text-gray-900">Your Skills</h3>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setShowSkillsEditor(!showSkillsEditor)}
+                    >
+                      {showSkillsEditor ? 'Done' : 'Edit Skills'}
+                    </Button>
+                  </div>
+                  
+                  {showSkillsEditor ? (
+                    <div className="space-y-3">
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="text"
+                            value={newSkill}
+                            onChange={(e) => {
+                              setNewSkill(e.target.value);
+                              setShowSuggestions(e.target.value.length > 0);
+                            }}
+                            placeholder="Add a skill (e.g., React, Python, AWS)"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter' && newSkill.trim()) {
+                                e.preventDefault();
+                                addSkill(newSkill);
+                              }
+                            }}
+                          />
+                          
+                          {/* Skill Suggestions Dropdown */}
+                          {showSuggestions && newSkill && (
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
+                              {SKILL_SUGGESTIONS
+                                .filter(skill => 
+                                  skill.name.toLowerCase().includes(newSkill.toLowerCase()) &&
+                                  !profile.skills.some(userSkill => userSkill.name.toLowerCase() === skill.name.toLowerCase())
+                                )
+                                .slice(0, 5)
+                                .map((skill, index) => (
+                                  <button
+                                    key={index}
+                                    onClick={() => {
+                                      addSkill(skill.name);
+                                    }}
+                                    className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm first:rounded-t-lg last:rounded-b-lg"
+                                  >
+                                    <span className="font-medium">{skill.name}</span>
+                                    <span className="text-gray-500 ml-2 text-xs capitalize">
+                                      {skill.category}
+                                    </span>
+                                  </button>
+                                ))}
+                              {/* Show option to add custom skill if no exact matches */}
+                              {newSkill.trim() && !SKILL_SUGGESTIONS.some(skill => 
+                                skill.name.toLowerCase() === newSkill.toLowerCase()
+                              ) && (
+                                <button
+                                  onClick={() => {
+                                    addSkill(newSkill);
+                                  }}
+                                  className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm rounded-lg border-t"
+                                >
+                                  <span className="font-medium">Add "{newSkill}"</span>
+                                  <span className="text-gray-500 ml-2 text-xs">Custom skill</span>
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <Button 
+                          size="sm" 
+                          onClick={() => addSkill(newSkill)}
+                          disabled={!newSkill.trim()}
+                          className="btn-primary"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      {/* Quick Add Popular Skills */}
+                      <div>
+                        <p className="text-xs text-gray-500 mb-2">Popular skills:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {SKILL_SUGGESTIONS
+                            .filter(skill => !profile.skills.some(userSkill => userSkill.name === skill.name))
+                            .slice(0, 6)
+                            .map((skill, index) => (
+                              <button
+                                key={index}
+                                onClick={() => addSkill(skill.name)}
+                                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs transition-colors"
+                              >
+                                + {skill.name}
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {profile.skills.map((skill) => (
+                        <div key={skill.id} className="group relative">
+                          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium flex items-center gap-1">
+                            {skill.name}
+                            <button
+                              onClick={() => removeSkill(skill.id)}
+                              className="ml-1 text-blue-600 hover:text-blue-800 hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                              title="Remove skill"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </span>
+                        </div>
+                      ))}
+                      {profile.skills.length === 0 && (
+                        <button 
+                          onClick={() => setShowSkillsEditor(true)}
+                          className="px-3 py-1 border-2 border-dashed border-gray-300 text-gray-500 rounded-full text-sm hover:border-gray-400 transition-colors"
+                        >
+                          + Add your first skill
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {/* Experience Level */}
                 <div>
@@ -694,68 +704,113 @@ const removeSkill = (skillId: string) => {
                       </Alert>
                     )}
 
-                    {/* Upload Area */}
-                    <div 
-                      className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-8 text-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
-                      onClick={handleFileUpload}
-                    >
-                      <FileText className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                      <p className="font-medium mb-1 text-sm sm:text-base">Upload your resume</p>
-                      <p className="text-xs sm:text-sm text-gray-500 mb-2">Drag and drop or click to browse</p>
-                      <p className="text-xs text-gray-400">Supports PDF, DOC, DOCX (max 5MB)</p>
-                    </div>
-                    
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      onChange={handleFileChange} 
-                      className="hidden" 
-                      accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" 
-                    />
+                    {!resumeData ? (
+                      <div className="space-y-4">
+                        {/* Upload Area */}
+                        <div 
+                          className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-8 text-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+                          onClick={handleFileUpload}
+                        >
+                          <FileText className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                          <p className="font-medium mb-1 text-sm sm:text-base">Upload your resume</p>
+                          <p className="text-xs sm:text-sm text-gray-500 mb-2">Drag and drop or click to browse</p>
+                          <p className="text-xs text-gray-400">Supports PDF, DOC, DOCX, TXT (max 5MB)</p>
+                        </div>
+                        
+                        <input 
+                          type="file" 
+                          ref={fileInputRef} 
+                          onChange={handleFileChange} 
+                          className="hidden" 
+                          accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" 
+                        />
 
-                    {isUploading && (
-                      <div className="text-center py-4">
-                        <RefreshCw className="h-5 w-5 mx-auto animate-spin text-blue-500 mb-2" />
-                        <p className="text-sm text-gray-600">Uploading and analyzing...</p>
+                        {isUploading && (
+                          <div className="text-center py-4">
+                            <RefreshCw className="h-5 w-5 mx-auto animate-spin text-blue-500 mb-2" />
+                            <p className="text-sm text-gray-600">Uploading and analyzing...</p>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    
-                    {/* Resume List */}
-                    <div>
-                      <h3 className="font-medium text-gray-900 mb-3 text-sm sm:text-base">Your Resumes</h3>
-                      <div className="space-y-3">
-                        <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                            <div className="flex items-start sm:items-center gap-3">
-                              <FileText className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5 sm:mt-0" />
+                    ) : (
+                      <div className="space-y-4">
+                        {/* Resume Analysis Results */}
+                        <div className="border border-gray-200 rounded-lg p-4">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                            <div className="flex items-start gap-3">
+                              <FileText className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
                               <div className="min-w-0 flex-1">
-                                <p className="font-medium break-words text-sm sm:text-base">MyResume_2025.pdf</p>
-                                <p className="text-xs text-gray-500">Uploaded on March 15, 2025</p>
-                                <div className="mt-1 flex flex-wrap gap-1">
-                                  <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">
-                                    98% ATS Score
-                                  </span>
-                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
-                                    15 Skills Detected
-                                  </span>
+                                <p className="font-medium break-words text-sm sm:text-base">{resumeData.filename}</p>
+                                <p className="text-xs text-gray-500">
+                                  Uploaded on {new Date(resumeData.uploadedAt || resumeData.updated_at).toLocaleDateString()}
+                                </p>
+                                
+                                {/* Analysis Results */}
+                                <div className="mt-3 grid grid-cols-2 gap-3">
+                                  <div className="bg-green-50 p-3 rounded-lg">
+                                    <p className="text-xs text-green-600 font-medium">ATS Score</p>
+                                    <p className="text-lg font-bold text-green-700">{resumeData.atsScore || resumeData.ats_score || 0}%</p>
+                                  </div>
+                                  <div className="bg-blue-50 p-3 rounded-lg">
+                                    <p className="text-xs text-blue-600 font-medium">Skills Detected</p>
+                                    <p className="text-lg font-bold text-blue-700">
+                                      {resumeData.techStack?.length || resumeData.tech_stack?.length || 0}
+                                    </p>
+                                  </div>
                                 </div>
+                                
+                                {/* Skills */}
+                                {(resumeData.techStack || resumeData.tech_stack) && (
+                                  <div className="mt-3">
+                                    <p className="text-xs text-gray-600 font-medium mb-2">Detected Skills:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {(resumeData.techStack || resumeData.tech_stack).slice(0, 10).map((skill: string, index: number) => (
+                                        <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                          {skill}
+                                        </span>
+                                      ))}
+                                      {(resumeData.techStack || resumeData.tech_stack).length > 10 && (
+                                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                          +{(resumeData.techStack || resumeData.tech_stack).length - 10} more
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
+                            
                             <div className="flex gap-2 self-end sm:self-auto">
-                              <Button variant="outline" size="sm" className="flex-1 sm:flex-none text-xs sm:text-sm">
-                                View Analysis
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={handleFileUpload}
+                                className="text-xs sm:text-sm"
+                              >
+                                Replace
                               </Button>
-                              <Button variant="outline" size="sm" className="flex-1 sm:flex-none text-xs sm:text-sm">
-                                Download
-                              </Button>
-                              <Button variant="outline" size="sm" className="flex-1 sm:flex-none text-xs sm:text-sm text-red-600 hover:text-red-700 hover:bg-red-50">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={deleteResume}
+                                className="text-xs sm:text-sm text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
                                 Delete
                               </Button>
                             </div>
                           </div>
                         </div>
+
+                        {/* Upload new resume input */}
+                        <input 
+                          type="file" 
+                          ref={fileInputRef} 
+                          onChange={handleFileChange} 
+                          className="hidden" 
+                          accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" 
+                        />
                       </div>
-                    </div>
+                    )}
                   </>
                 ) : (
                   // Free User - PRO Upgrade Prompt
