@@ -6,6 +6,7 @@ import MatchingJobs from '@/components/ui/resume-matcher/matching-jobs';
 import JobSearchFilters from '@/components/ui/resume-matcher/job-search-filters';
 import { Job } from '@/types/job';
 
+
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);

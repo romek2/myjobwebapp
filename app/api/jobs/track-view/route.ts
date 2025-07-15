@@ -10,33 +10,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get jobId from URL
-    const url = new URL(req.url);
-    const jobId = url.pathname.split('/')[3]; // /api/jobs/[jobId]/view
-
+    const { jobId } = await req.json();
     const supabase = createServerSupabase();
-    const { source } = await req.json();
 
-    // Record the job view
+    // Just track the view
     const { error } = await supabase
       .from('user_job_views')
       .upsert({
         user_id: session.user.id,
         job_id: jobId,
-        source: source || 'direct',
         viewed_at: new Date().toISOString()
       }, {
         onConflict: 'user_id,job_id'
       });
 
     if (error) {
-      console.error('Error tracking job view:', error);
+      console.error('Error tracking view:', error);
       return NextResponse.json({ error: 'Failed to track view' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error tracking job view:', error);
+    console.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

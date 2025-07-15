@@ -1,10 +1,11 @@
-// src/components/ui/resume-matcher/matching-jobs
+// src/components/ui/resume-matcher/matching-jobs.tsx - Updated with tracking
 
 import React from 'react';
 import { Job } from '@/types/job';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useJobViews } from '@/hooks/useJobViews';  // ✅ Add this import
 
 interface MatchingJobsProps {
   jobs: Job[];
@@ -21,6 +22,14 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
   totalPages,
   onPageChange
 }) => {
+  const { trackView } = useJobViews();  // ✅ Add this hook
+
+  // ✅ Add this handler
+  const handleJobClick = (job: Job) => {
+    trackView(job.id);  // Track the view
+    window.open(job.url, '_blank');  // Open external job
+  };
+
   if (isLoading) {
     return (
       <div className="text-center py-12">
@@ -86,14 +95,14 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
             
             <div className="mt-3">
               <p className="text-sm text-gray-700 line-clamp-2">{job.description}</p>
-              <a 
-                href={job.url} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-sm text-blue-600 hover:underline mt-1 inline-block"
+              
+              {/* ✅ Updated: Replace the <a> link with a button that tracks views */}
+              <button
+                onClick={() => handleJobClick(job)}
+                className="text-sm text-blue-600 hover:underline mt-1 inline-block cursor-pointer"
               >
                 View Job
-              </a>
+              </button>
             </div>
           </CardContent>
         </Card>

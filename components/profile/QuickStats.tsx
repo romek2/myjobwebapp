@@ -1,6 +1,6 @@
 // components/profile/QuickStats.tsx - FIXED: Uses real tracking data
 'use client';
-
+import { useJobViews } from '@/hooks/useJobViews';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   TrendingUp, 
@@ -25,6 +25,7 @@ export default function QuickStats({
 }: QuickStatsProps) {
   // ✅ FIXED: Get real tracking data from hook
   const { activity, isLoading } = useJobTracking();
+  const { viewCount } = useJobViews();
 
   return (
     <Card>
@@ -40,9 +41,8 @@ export default function QuickStats({
             <span className="text-sm text-gray-600">Jobs Viewed</span>
             <div className="flex items-center gap-1">
               <Eye className="h-4 w-4 text-blue-500" />
-              <span className="font-medium">
-                {isLoading ? '-' : activity.stats.totalViews}
-              </span>
+              <span className="font-medium">{viewCount}</span>
+              
             </div>
           </div>
           <div className="flex items-center justify-between">
