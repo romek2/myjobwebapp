@@ -11,6 +11,7 @@ export interface Job {
   postedAt: Date;
   techStack: string[];
   match: number;
+  job_type?: 'external' | 'internal'; 
   matchDetails?: {
     techStackScore: number;
     titleRelevanceScore: number;

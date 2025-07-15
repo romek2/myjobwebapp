@@ -1,11 +1,10 @@
-// src/components/ui/resume-matcher/matching-jobs.tsx - Updated with Apply button
-
 import React from 'react';
 import { Job } from '@/types/job';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Eye, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, ExternalLink, Send } from 'lucide-react';
 import { useJobActions } from '@/hooks/useJobActions';
+import { useRouter } from 'next/navigation';
 
 interface MatchingJobsProps {
   jobs: Job[];
@@ -23,6 +22,12 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
   onPageChange
 }) => {
   const { handleJobView, handleJobApply } = useJobActions();
+  const router = useRouter();
+
+  const handleInternalApply = (job: Job) => {
+    // For internal jobs, navigate to internal application page
+    router.push(`/jobs/${job.id}/apply`);
+  };
 
   if (isLoading) {
     return (
@@ -58,7 +63,15 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
           <CardContent className="p-5">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="font-semibold text-lg">{job.title}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-lg">{job.title}</h3>
+                  {/* Show job type badge */}
+                  {job.job_type === 'internal' && (
+                    <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">
+                      Direct Apply
+                    </span>
+                  )}
+                </div>
                 <div className="mt-1 space-y-2">
                   <p className="text-sm text-gray-600">
                     <span className="font-medium">Company:</span> {job.company}
@@ -90,23 +103,38 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
             <div className="mt-3">
               <p className="text-sm text-gray-700 line-clamp-2">{job.description}</p>
               
-              {/* Updated: Add both View and Apply buttons */}
+              {/* ✅ Different buttons based on job type */}
               <div className="flex gap-3 mt-4">
-                <button
-                  onClick={() => handleJobView(job.id)}
-                  className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700 hover:underline"
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  View Details
-                </button>
                 
-                <button
-                  onClick={() => handleJobApply(job.id, job.title, job.company, job.url, job.location)}
-                  className="inline-flex items-center text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition-colors"
-                >
-                  <ExternalLink className="h-4 w-4 mr-1" />
-                  Apply Now
-                </button>
+                {job.job_type === 'external' ? (
+                  // External jobs: Only "View Job" button
+                  <button
+                    onClick={() => handleJobView(job.id.toString())}
+                    className="inline-flex items-center text-sm bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    View Job
+                  </button>
+                ) : (
+                  // Internal jobs: Both "View Details" and "Apply Now" buttons
+                  <>
+                    <button
+                      onClick={() => router.push(`/jobs/${job.id}`)}
+                      className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View Details
+                    </button>
+                    
+                    <button
+                      onClick={() => handleInternalApply(job)}
+                      className="inline-flex items-center text-sm bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
+                    >
+                      <Send className="h-4 w-4 mr-1" />
+                      Apply Now
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </CardContent>
