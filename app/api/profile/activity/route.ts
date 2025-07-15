@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
@@ -20,7 +20,7 @@ export async function GET() {
       .order('applied_at', { ascending: false })
       .limit(10);
 
-    // Get recent views
+    // Get recent views  
     const { data: views } = await supabase
       .from('user_job_views')
       .select('*')

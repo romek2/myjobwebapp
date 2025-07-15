@@ -3,25 +3,26 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
 
-export async function POST(
-  request: NextRequest,
-  context: { params: { jobId: string } }  // ✅ FIXED: correct typing
-) {
+export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = createServerSupabase();
-    const { source } = await request.json();
+    // Get jobId from URL
+    const url = new URL(req.url);
+    const jobId = url.pathname.split('/')[3]; // /api/jobs/[jobId]/view
 
-    // Record the job view (upsert to avoid duplicates)
+    const supabase = createServerSupabase();
+    const { source } = await req.json();
+
+    // Record the job view
     const { error } = await supabase
       .from('user_job_views')
       .upsert({
         user_id: session.user.id,
-        job_id: context.params.jobId,  // ✅ FIXED: use context.params
+        job_id: jobId,
         source: source || 'direct',
         viewed_at: new Date().toISOString()
       }, {

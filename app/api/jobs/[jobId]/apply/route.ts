@@ -3,25 +3,26 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
 
-export async function POST(
-  request: NextRequest,
-  context: { params: { jobId: string } }  // ✅ FIXED: correct typing
-) {
+export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get jobId from URL
+    const url = new URL(req.url);
+    const jobId = url.pathname.split('/')[3]; // /api/jobs/[jobId]/apply
+
     const supabase = createServerSupabase();
-    const { job_title, company, application_url } = await request.json();
+    const { job_title, company, application_url } = await req.json();
 
     // Record the external application
     const { data: application, error } = await supabase
       .from('user_job_applications')
       .insert({
         user_id: session.user.id,
-        job_id: context.params.jobId,  // ✅ FIXED: use context.params
+        job_id: jobId,
         job_title,
         company,
         application_url,
@@ -41,5 +42,3 @@ export async function POST(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
-// app/api/profile/activity/route.ts - Get user's job activity
