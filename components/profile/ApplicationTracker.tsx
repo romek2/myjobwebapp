@@ -1,4 +1,4 @@
-// components/profile/ApplicationTracker.tsx - Updated with real tracking data
+// components/profile/ApplicationTracker.tsx - Working version with real data
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -9,15 +9,14 @@ import {
   Building, 
   MapPin, 
   Clock,
-  Eye,
   ExternalLink,
   RefreshCw
 } from 'lucide-react';
-import { useJobTracking } from '@/hooks/useJobTracking';
+import { useJobViews } from '@/hooks/useJobViews';
 
 export default function ApplicationTracker() {
   const router = useRouter();
-  const { activity, isLoading, error } = useJobTracking();
+  const { applications, isLoading } = useJobViews();
 
   if (isLoading) {
     return (
@@ -29,166 +28,99 @@ export default function ApplicationTracker() {
     );
   }
 
-  const hasActivity = activity.applications.length > 0 || activity.views.length > 0;
-
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
           <Briefcase className="h-5 w-5" />
-          Job Activity
-          <div className="flex gap-2">
-            {activity.stats.totalApplications > 0 && (
-              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                {activity.stats.totalApplications} Applied
-              </span>
-            )}
-            {activity.stats.totalViews > 0 && (
-              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
-                {activity.stats.totalViews} Viewed
-              </span>
-            )}
-          </div>
+          Job Applications
+          {applications.length > 0 && (
+            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
+              {applications.length}
+            </span>
+          )}
         </CardTitle>
         <CardDescription>
-          Track jobs you've viewed and applied to
+          Track jobs you've applied to
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {hasActivity ? (
+        {applications.length > 0 ? (
           <div className="space-y-4">
-            
-            {/* Recent Applications */}
-            {activity.applications.length > 0 && (
-              <div>
-                <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                  <ExternalLink className="h-4 w-4" />
-                  Recent Applications ({activity.stats.totalApplications})
-                </h3>
-                <div className="space-y-3">
-                  {activity.applications.slice(0, 3).map((app) => (
-                    <div key={app.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-gray-900 break-words text-sm sm:text-base">
-                            {app.job_title}
-                          </h4>
-                          <p className="text-sm text-gray-600 flex items-center mt-1">
-                            <Building className="h-4 w-4 mr-1 flex-shrink-0" />
-                            <span className="break-words">{app.company}</span>
-                          </p>
-                          <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                            <span className="flex items-center">
-                              <Clock className="h-3 w-3 mr-1" />
-                              Applied {new Date(app.applied_at).toLocaleDateString()}
-                            </span>
-                            {app.application_url && (
-                              <a 
-                                href={app.application_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center text-blue-600 hover:text-blue-700"
-                              >
-                                <ExternalLink className="h-3 w-3 mr-1" />
-                                View Application
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                        <span className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
-                          app.status === 'applied' ? 'bg-blue-100 text-blue-800' : 
-                          app.status === 'interview' ? 'bg-green-100 text-green-800' : 
-                          app.status === 'rejected' ? 'bg-red-100 text-red-800' : 
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+            {/* Application Cards */}
+            <div className="space-y-3">
+              {applications.slice(0, 3).map((app) => (
+                <div key={app.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-gray-900 break-words text-sm sm:text-base">
+                        {app.job_title}
+                      </h4>
+                      <p className="text-sm text-gray-600 flex items-center mt-1">
+                        <Building className="h-4 w-4 mr-1 flex-shrink-0" />
+                        <span className="break-words">{app.company}</span>
+                      </p>
+                      <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                        {app.location && (
+                          <span className="flex items-center">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {app.location}
+                          </span>
+                        )}
+                        <span className="flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Applied {new Date(app.applied_at).toLocaleDateString()}
                         </span>
+                        {app.application_url && (
+                          <a 
+                            href={app.application_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center text-blue-600 hover:text-blue-700"
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            View Application
+                          </a>
+                        )}
                       </div>
                     </div>
-                  ))}
+                    <span className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${
+                      app.status === 'applied' ? 'bg-blue-100 text-blue-800' : 
+                      app.status === 'interview' ? 'bg-green-100 text-green-800' : 
+                      app.status === 'rejected' ? 'bg-red-100 text-red-800' : 
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {/* Recent Views */}
-            {activity.views.length > 0 && (
-              <div>
-                <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                  <Eye className="h-4 w-4" />
-                  Recently Viewed ({activity.stats.totalViews})
-                </h3>
-                <div className="space-y-2">
-                  {activity.views.slice(0, 5).map((view) => (
-                    <div key={view.id} className="border border-gray-100 rounded-lg p-3 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h5 className="text-sm font-medium text-gray-900 break-words">
-                            {view.Job?.title || 'Job Title'}
-                          </h5>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                            <span className="flex items-center">
-                              <Building className="h-3 w-3 mr-1" />
-                              {view.Job?.company || 'Company'}
-                            </span>
-                            <span className="flex items-center">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {new Date(view.viewed_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => router.push(`/jobs/${view.job_id}`)}
-                          className="text-blue-600 hover:text-blue-700"
-                        >
-                          <Eye className="h-3 w-3 mr-1" />
-                          View
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* View All Button */}
-            <div className="text-center pt-2">
-              <Button 
-                variant="outline"
-                onClick={() => router.push("/profile/activity")}
-                className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300"
-              >
-                View All Activity
-              </Button>
+              ))}
             </div>
+            
+            {applications.length > 3 && (
+              <div className="text-center pt-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => router.push("/profile/applications")}
+                  className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300"
+                >
+                  View All {applications.length} Applications
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center py-8">
             <Briefcase className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium mb-2">No activity yet</h3>
+            <h3 className="text-lg font-medium mb-2">No applications yet</h3>
             <p className="text-gray-600 mb-4 text-sm sm:text-base">
-              When you view or apply for jobs, they will appear here
+              When you apply for jobs, they will appear here. Click "Apply Now" on any job to get started!
             </p>
             <Button 
               onClick={() => router.push("/")}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               Browse Jobs
-            </Button>
-          </div>
-        )}
-        
-        {error && (
-          <div className="text-center py-4">
-            <p className="text-red-600 text-sm">Error loading activity: {error}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.location.reload()}
-              className="mt-2"
-            >
-              Retry
             </Button>
           </div>
         )}
