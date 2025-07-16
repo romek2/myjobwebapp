@@ -3,7 +3,7 @@ import React from 'react';
 import { Job } from '@/types/job';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Send } from 'lucide-react';
 
 interface MatchingJobsProps {
   jobs: Job[];
@@ -92,15 +92,22 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
               {/* ✅ SIMPLE: Just one "Apply Now" button that opens the job URL */}
               <div className="flex gap-3 mt-4">
                 <a
-                  href={job.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center text-sm bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-                >
-                  <ExternalLink className="h-4 w-4 mr-1" />
-                  Apply Now
-                </a>
-              </div>
+                   href={job.url}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="inline-flex items-center text-sm bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-colors"
+  >
+    <ExternalLink className="h-4 w-4 mr-1" />
+    View Job
+  </a>
+  <button
+    onClick={() => alert('test')}
+    className="inline-flex items-center text-sm bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+  >
+    <Send className="h-4 w-4 mr-1" />
+    Apply Now
+  </button>
+</div>
             </div>
           </CardContent>
         </Card>
