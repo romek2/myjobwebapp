@@ -1,3 +1,4 @@
+// components/ui/resume-matcher/matching-jobs.tsx - FIXED VERSION
 import React from 'react';
 import { Job } from '@/types/job';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,12 +22,37 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
   totalPages,
   onPageChange
 }) => {
-  const { handleJobView, handleJobApply } = useJobActions();
+  const { handleJobView } = useJobActions();
   const router = useRouter();
 
-  const handleInternalApply = (job: Job) => {
-    // For internal jobs, navigate to internal application page
-    router.push(`/jobs/${job.id}/apply`);
+  // Handle external job view - track and redirect to external URL
+  const handleExternalJobView = async (job: Job) => {
+    try {
+      // Track the view first
+      await handleJobView(job.id.toString());
+      
+      // Then redirect to external URL
+      window.open(job.url, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      console.error('Error tracking job view:', error);
+      // Still redirect even if tracking fails
+      window.open(job.url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  // Handle internal job application
+  const handleInternalApply = async (job: Job) => {
+    try {
+      // Track the view first
+      await handleJobView(job.id.toString());
+      
+      // Then navigate to internal application page
+      router.push(`/jobs/${job.id}/apply`);
+    } catch (error) {
+      console.error('Error tracking job view:', error);
+      // Still navigate even if tracking fails
+      router.push(`/jobs/${job.id}/apply`);
+    }
   };
 
   if (isLoading) {
@@ -103,13 +129,12 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
             <div className="mt-3">
               <p className="text-sm text-gray-700 line-clamp-2">{job.description}</p>
               
-              {/* ✅ Different buttons based on job type */}
+              {/* ✅ FIXED: Different button logic based on job type */}
               <div className="flex gap-3 mt-4">
-                
                 {job.job_type === 'external' ? (
-                  // External jobs: Only "View Job" button
+                  // External jobs: "View Job" button that opens external URL
                   <button
-                    onClick={() => handleJobView(job.id.toString())}
+                    onClick={() => handleExternalJobView(job)}
                     className="inline-flex items-center text-sm bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
                   >
                     <ExternalLink className="h-4 w-4 mr-1" />
