@@ -1,6 +1,6 @@
 // components/profile/QuickStats.tsx - FIXED: Uses real tracking data
 'use client';
-import { useJobViews } from '@/hooks/useJobViews';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   TrendingUp, 
@@ -10,7 +10,7 @@ import {
   Bell 
 } from 'lucide-react';
 import { JobAlert } from '@/types';
-import { useJobTracking } from '@/hooks/useJobTracking';
+
 
 interface QuickStatsProps {
   skillsCount: number;
@@ -24,8 +24,7 @@ export default function QuickStats({
   isPro 
 }: QuickStatsProps) {
   // ✅ FIXED: Get real tracking data from hook
-  const { activity, isLoading } = useJobTracking();
-  const { viewCount } = useJobViews();
+  
 
   return (
     <Card>
@@ -41,7 +40,7 @@ export default function QuickStats({
             <span className="text-sm text-gray-600">Jobs Viewed</span>
             <div className="flex items-center gap-1">
               <Eye className="h-4 w-4 text-blue-500" />
-              <span className="font-medium">{viewCount}</span>
+              <span className="font-medium">1</span>
               
             </div>
           </div>
@@ -50,7 +49,7 @@ export default function QuickStats({
             <div className="flex items-center gap-1">
               <Briefcase className="h-4 w-4 text-green-500" />
               <span className="font-medium">
-                {isLoading ? '-' : activity.stats.totalApplications}
+                
               </span>
             </div>
           </div>
