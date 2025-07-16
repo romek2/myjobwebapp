@@ -1,49 +1,43 @@
-// src/app/api/applications/route.ts
-import { getServerSession } from 'next-auth';
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-// src/app/api/applications/route.ts
-import { authOptions } from "@/lib/auth";
+// app/api/applications/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
+import { createServerSupabase } from '@/lib/supabase';
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
-  
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const supabase = createServerSupabase();
+
+    const { data: applications, error } = await supabase
+      .from('user_job_applications')
+      .select(`
+        id,
+        job_id,
+        job_title,
+        company,
+        status,
+        applied_at,
+        desired_salary,
+        available_start_date
+      `)
+      .eq('user_id', session.user.id)
+      .order('applied_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return NextResponse.json({ applications: applications || [] });
+
+  } catch (error) {
+    console.error('Error fetching applications:', error);
+    return NextResponse.json({ 
+      error: 'Failed to fetch applications' 
+    }, { status: 500 });
   }
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email }
-  });
-
-  if (!user) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  }
-
-
-
-  return NextResponse.json("Success");
-}
-
-export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-  }
-
-  const data = await request.json();
-  const { jobId } = data;
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email }
-  });
-
-  if (!user) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  }
-
-
-
-  return NextResponse.json({ message: 'Submitted successfully' });
 }

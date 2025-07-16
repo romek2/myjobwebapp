@@ -1,4 +1,4 @@
-// src/types/job.ts
+// types/job.ts - Update
 export interface Job {
   id: string;
   title: string;
@@ -11,7 +11,8 @@ export interface Job {
   postedAt: Date;
   techStack: string[];
   match: number;
-  job_type?: 'external' | 'internal'; 
+  job_type?: 'external' | 'internal';
+  application_type?: 'external' | 'direct' | 'both'; // Add this
   matchDetails?: {
     techStackScore: number;
     titleRelevanceScore: number;
