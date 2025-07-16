@@ -118,6 +118,7 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
                       <Send className="h-4 w-4 mr-1" />
                       Apply Now
                     </Button>
+                    
                   )}
                 </div>
               </div>
