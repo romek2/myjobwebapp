@@ -6,7 +6,7 @@ import { createServerSupabase } from '@/lib/supabase';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  context: { params: { jobId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -14,7 +14,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const jobId = params.jobId;
+    const { jobId } = context.params;
     const formData = await request.formData();
     
     // Extract form data
@@ -45,7 +45,7 @@ export async function POST(
       }, { status: 400 });
     }
 
-    // 2. Check if user already applied using your existing table
+    // 2. Check if user already applied
     const { data: existingApplication } = await supabase
       .from('user_job_applications')
       .select('id')
@@ -76,21 +76,17 @@ export async function POST(
 
       if (uploadError) {
         console.error('Resume upload error:', uploadError);
-        return NextResponse.json({ 
-          error: 'Failed to upload resume' 
-        }, { status: 500 });
+        // Continue without resume if upload fails
+      } else {
+        const { data: { publicUrl } } = supabase.storage
+          .from('resumes')
+          .getPublicUrl(fileName);
+        resumeFileUrl = publicUrl;
+        resumeFilename = resumeFile.name;
       }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('resumes')
-        .getPublicUrl(fileName);
-
-      resumeFileUrl = publicUrl;
-      resumeFilename = resumeFile.name;
     }
 
-    // 4. Create application record using your existing user_job_applications table
+    // 4. Create application record
     const { data: application, error: appError } = await supabase
       .from('user_job_applications')
       .insert({
@@ -119,9 +115,6 @@ export async function POST(
       }, { status: 500 });
     }
 
-    // 5. Send notification emails (optional)
-    await sendApplicationNotifications(application, job);
-
     return NextResponse.json({
       success: true,
       application: {
@@ -137,12 +130,4 @@ export async function POST(
       error: 'Internal server error' 
     }, { status: 500 });
   }
-}
-
-// Helper function for notifications
-async function sendApplicationNotifications(application: any, job: any) {
-  // TODO: Implement email notifications
-  // - Send confirmation to applicant
-  // - Send notification to employer (if internal job)
-  console.log(`Application ${application.id} submitted for ${job.title}`);
 }
