@@ -1,11 +1,9 @@
-// components/ui/resume-matcher/matching-jobs.tsx - FIXED VERSION
+// components/ui/resume-matcher/matching-jobs.tsx - SIMPLIFIED VERSION
 import React from 'react';
 import { Job } from '@/types/job';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Eye, ExternalLink, Send } from 'lucide-react';
-import { useJobActions } from '@/hooks/useJobActions';
-import { useRouter } from 'next/navigation';
+import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 
 interface MatchingJobsProps {
   jobs: Job[];
@@ -22,38 +20,6 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
   totalPages,
   onPageChange
 }) => {
-  const { handleJobView } = useJobActions();
-  const router = useRouter();
-
-  // Handle external job view - track and redirect to external URL
-  const handleExternalJobView = async (job: Job) => {
-    try {
-      // Track the view first
-      await handleJobView(job.id.toString());
-      
-      // Then redirect to external URL
-      window.open(job.url, '_blank', 'noopener,noreferrer');
-    } catch (error) {
-      console.error('Error tracking job view:', error);
-      // Still redirect even if tracking fails
-      window.open(job.url, '_blank', 'noopener,noreferrer');
-    }
-  };
-
-  // Handle internal job application
-  const handleInternalApply = async (job: Job) => {
-    try {
-      // Track the view first
-      await handleJobView(job.id.toString());
-      
-      // Then navigate to internal application page
-      router.push(`/jobs/${job.id}/apply`);
-    } catch (error) {
-      console.error('Error tracking job view:', error);
-      // Still navigate even if tracking fails
-      router.push(`/jobs/${job.id}/apply`);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -91,12 +57,6 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-lg">{job.title}</h3>
-                  {/* Show job type badge */}
-                  {job.job_type === 'internal' && (
-                    <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">
-                      Direct Apply
-                    </span>
-                  )}
                 </div>
                 <div className="mt-1 space-y-2">
                   <p className="text-sm text-gray-600">
@@ -129,37 +89,17 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
             <div className="mt-3">
               <p className="text-sm text-gray-700 line-clamp-2">{job.description}</p>
               
-              {/* ✅ FIXED: Different button logic based on job type */}
+              {/* ✅ SIMPLE: Just one "Apply Now" button that opens the job URL */}
               <div className="flex gap-3 mt-4">
-                {job.job_type === 'external' ? (
-                  // External jobs: "View Job" button that opens external URL
-                  <button
-                    onClick={() => handleExternalJobView(job)}
-                    className="inline-flex items-center text-sm bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-1" />
-                    View Job
-                  </button>
-                ) : (
-                  // Internal jobs: Both "View Details" and "Apply Now" buttons
-                  <>
-                    <button
-                      onClick={() => router.push(`/jobs/${job.id}`)}
-                      className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700 hover:underline"
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Details
-                    </button>
-                    
-                    <button
-                      onClick={() => handleInternalApply(job)}
-                      className="inline-flex items-center text-sm bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
-                    >
-                      <Send className="h-4 w-4 mr-1" />
-                      Apply Now
-                    </button>
-                  </>
-                )}
+                <a
+                  href={job.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center text-sm bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+                >
+                  <ExternalLink className="h-4 w-4 mr-1" />
+                  Apply Now
+                </a>
               </div>
             </div>
           </CardContent>
