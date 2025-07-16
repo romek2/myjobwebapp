@@ -1,23 +1,26 @@
-// app/api/jobs/[jobId]/apply/route.ts
+// app/api/jobs/[jobId]/apply/route.ts - Direct Application Version
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
+import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
 
-export async function POST(
-  request: NextRequest,
-  context: { params: { jobId: string } }
-) {
+export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { jobId } = context.params;
-    const formData = await request.formData();
+    // Get jobId from URL path - your method works perfectly!
+    const url = new URL(req.url);
+    const jobId = url.pathname.split('/')[3]; // /api/jobs/[jobId]/apply
+
+    const supabase = createServerSupabase();
+
+    // For direct applications, we expect FormData (not JSON)
+    const formData = await req.formData();
     
-    // Extract form data
+    // Extract form fields
     const coverLetter = formData.get('coverLetter') as string;
     const phone = formData.get('phone') as string;
     const desiredSalary = formData.get('desiredSalary') as string;
@@ -26,9 +29,7 @@ export async function POST(
     const portfolioUrl = formData.get('portfolioUrl') as string;
     const resumeFile = formData.get('resume') as File;
 
-    const supabase = createServerSupabase();
-
-    // 1. Get job details
+    // Get job details
     const { data: job, error: jobError } = await supabase
       .from('jobs')
       .select('title, company, application_type')
@@ -39,13 +40,14 @@ export async function POST(
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
+    // Check if job allows direct applications
     if (job.application_type === 'external') {
       return NextResponse.json({ 
         error: 'This job only accepts external applications' 
       }, { status: 400 });
     }
 
-    // 2. Check if user already applied
+    // Check for duplicate application
     const { data: existingApplication } = await supabase
       .from('user_job_applications')
       .select('id')
@@ -59,7 +61,7 @@ export async function POST(
       }, { status: 409 });
     }
 
-    // 3. Upload resume to Supabase Storage (if provided)
+    // Handle resume upload if provided
     let resumeFileUrl = null;
     let resumeFilename = null;
 
@@ -67,17 +69,14 @@ export async function POST(
       const fileExtension = resumeFile.name.split('.').pop();
       const fileName = `${session.user.id}/${jobId}/${Date.now()}.${fileExtension}`;
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('resumes')
         .upload(fileName, resumeFile, {
           contentType: resumeFile.type,
           upsert: false
         });
 
-      if (uploadError) {
-        console.error('Resume upload error:', uploadError);
-        // Continue without resume if upload fails
-      } else {
+      if (!uploadError) {
         const { data: { publicUrl } } = supabase.storage
           .from('resumes')
           .getPublicUrl(fileName);
@@ -86,8 +85,8 @@ export async function POST(
       }
     }
 
-    // 4. Create application record
-    const { data: application, error: appError } = await supabase
+    // Create the application record
+    const { data: application, error } = await supabase
       .from('user_job_applications')
       .insert({
         user_id: session.user.id,
@@ -102,17 +101,14 @@ export async function POST(
         desired_salary: desiredSalary ? parseInt(desiredSalary) : null,
         available_start_date: availableStartDate || null,
         linkedin_url: linkedinUrl,
-        portfolio_url: portfolioUrl,
-        application_url: request.headers.get('referer') || null
+        portfolio_url: portfolioUrl
       })
       .select()
       .single();
 
-    if (appError) {
-      console.error('Application creation error:', appError);
-      return NextResponse.json({ 
-        error: 'Failed to submit application' 
-      }, { status: 500 });
+    if (error) {
+      console.error('Error creating application:', error);
+      return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -125,9 +121,7 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('Application submission error:', error);
-    return NextResponse.json({ 
-      error: 'Internal server error' 
-    }, { status: 500 });
+    console.error('Error processing application:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
