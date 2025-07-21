@@ -1,0 +1,56 @@
+
+[
+  {
+    "title": "Senior Full Stack Developer",
+    "company": "TechStart Inc",
+    "location": "Remote (US)",
+    "salary": "$120,000 - $150,000",
+    "job_type": "Full-time",
+    "experience_level": "Senior",
+    "employer_email": "hiring@techstart.com",
+    "deadline": "2025-02-28",
+    "url": "https://techstart.com/careers/senior-fullstack",
+    "description": "We're seeking a Senior Full Stack Developer to join our growing team. You'll work with React, Node.js, PostgreSQL, and AWS to build scalable web applications. Our tech stack includes TypeScript, Docker, and modern CI/CD practices. This is a remote position with flexible hours and competitive benefits.",
+    "benefits": [
+      "Health insurance",
+      "401k matching", 
+      "Flexible PTO",
+      "Remote work",
+      "Learning budget"
+    ]
+  },
+  {
+    "title": "DevOps Engineer", 
+    "company": "CloudScale Solutions",
+    "location": "San Francisco, CA",
+    "salary": "$130,000 - $160,000",
+    "job_type": "Full-time",
+    "experience_level": "Mid",
+    "employer_email": "jobs@cloudscale.io",
+    "deadline": "2025-03-15",
+    "description": "Join our DevOps team to build and maintain cloud infrastructure. You'll work with Kubernetes, AWS, Terraform, and monitoring tools. Experience with Python, Go, and CI/CD pipelines required. We offer excellent growth opportunities and cutting-edge technology.",
+    "benefits": [
+      "Stock options",
+      "Health + dental",
+      "Gym membership",
+      "Conference budget"
+    ]
+  },
+  {
+    "title": "Frontend React Developer",
+    "company": "Design Systems Co",
+    "location": "Remote",
+    "salary": "$90,000 - $120,000", 
+    "job_type": "Full-time",
+    "experience_level": "Mid",
+    "employer_email": "careers@designsystems.com",
+    "deadline": "2025-02-20",
+    "description": "We're looking for a Frontend Developer specializing in React and modern JavaScript. You'll build component libraries, work with designers on UI/UX, and optimize performance. Knowledge of TypeScript, Testing, and Design Systems is a plus.",
+    "benefits": [
+      "Remote work",
+      "Flexible hours",
+      "Health insurance",
+      "Professional development"
+    ]
+  }
+]
