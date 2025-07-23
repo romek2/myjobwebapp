@@ -1,4 +1,4 @@
-// components/profile/ApplicationTracker.tsx - REWRITTEN FROM SCRATCH
+// components/profile/ApplicationTracker.tsx - Updated to use real API
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -19,28 +19,27 @@ import {
 
 interface Application {
   id: string;
-  jobTitle: string;
+  job_id: string;
+  job_title: string;
   company: string;
-  location?: string;
-  applicationUrl?: string;
   status: 'applied' | 'interview' | 'offer' | 'rejected' | 'withdrawn';
-  appliedDate: string;
-  notes?: string;
-  salary?: string;
+  applied_at: string;
+  desired_salary?: number;
+  available_start_date?: string;
+  cover_letter?: string;
+  resume_file_url?: string;
+  linkedin_url?: string;
+  portfolio_url?: string;
+  phone?: string;
 }
 
 export default function ApplicationTracker() {
   const { data: session } = useSession();
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [editingApp, setEditingApp] = useState<Application | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load applications on component mount
-  useEffect(() => {
-    loadApplications();
-  }, [session]);
-
+  // Load applications from real API
   const loadApplications = async () => {
     if (!session?.user) {
       setIsLoading(false);
@@ -49,56 +48,28 @@ export default function ApplicationTracker() {
 
     try {
       setIsLoading(true);
+      setError(null);
       
-      // Try to load from localStorage first (for demo purposes)
-      const savedApps = localStorage.getItem(`applications_${session.user.id}`);
-      if (savedApps) {
-        setApplications(JSON.parse(savedApps));
+      const response = await fetch('/api/applications');
+      if (!response.ok) {
+        throw new Error('Failed to fetch applications');
       }
-      
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/applications');
-      // const data = await response.json();
-      // setApplications(data.applications);
-      
-    } catch (error) {
-      console.error('Error loading applications:', error);
+
+      const data = await response.json();
+      setApplications(data.applications || []);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load applications';
+      setError(errorMessage);
+      console.error('Error loading applications:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const saveApplications = (apps: Application[]) => {
-    if (session?.user) {
-      localStorage.setItem(`applications_${session.user.id}`, JSON.stringify(apps));
-      setApplications(apps);
-    }
-  };
-
-  const addApplication = (appData: Omit<Application, 'id'>) => {
-    const newApp: Application = {
-      ...appData,
-      id: Date.now().toString(),
-    };
-    const updatedApps = [newApp, ...applications];
-    saveApplications(updatedApps);
-    setShowAddForm(false);
-  };
-
-  const updateApplication = (updatedApp: Application) => {
-    const updatedApps = applications.map(app => 
-      app.id === updatedApp.id ? updatedApp : app
-    );
-    saveApplications(updatedApps);
-    setEditingApp(null);
-  };
-
-  const deleteApplication = (id: string) => {
-    if (confirm('Are you sure you want to delete this application?')) {
-      const updatedApps = applications.filter(app => app.id !== id);
-      saveApplications(updatedApps);
-    }
-  };
+  // Load applications on component mount
+  useEffect(() => {
+    loadApplications();
+  }, [session]);
 
   const getStatusColor = (status: Application['status']) => {
     switch (status) {
@@ -109,6 +80,10 @@ export default function ApplicationTracker() {
       case 'withdrawn': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
   };
 
   if (!session) {
@@ -141,34 +116,32 @@ export default function ApplicationTracker() {
               Track your job applications and their status
             </CardDescription>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={loadApplications}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setShowAddForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Add
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadApplications}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+            <p className="font-medium">Error loading applications:</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="flex items-center justify-center p-8">
             <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
+            <span className="ml-2">Loading applications...</span>
           </div>
         ) : applications.length > 0 ? (
           <div className="space-y-4">
@@ -179,61 +152,42 @@ export default function ApplicationTracker() {
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-gray-900 break-words text-sm sm:text-base">
-                        {app.jobTitle}
+                        {app.job_title}
                       </h4>
                       <p className="text-sm text-gray-600 flex items-center mt-1">
                         <Building className="h-4 w-4 mr-1 flex-shrink-0" />
                         <span className="break-words">{app.company}</span>
                       </p>
                       <div className="flex items-center gap-4 mt-2 text-xs text-gray-500 flex-wrap">
-                        {app.location && (
-                          <span className="flex items-center">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            {app.location}
-                          </span>
-                        )}
                         <span className="flex items-center">
                           <Clock className="h-3 w-3 mr-1" />
-                          Applied {new Date(app.appliedDate).toLocaleDateString()}
+                          Applied {formatDate(app.applied_at)}
                         </span>
-                        {app.applicationUrl && (
+                        {app.desired_salary && (
+                          <span>Salary: ${app.desired_salary.toLocaleString()}</span>
+                        )}
+                        {app.resume_file_url && (
                           <a 
-                            href={app.applicationUrl}
+                            href={app.resume_file_url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center text-blue-600 hover:text-blue-700"
                           >
                             <ExternalLink className="h-3 w-3 mr-1" />
-                            View
+                            Resume
                           </a>
                         )}
                       </div>
-                      {app.notes && (
-                        <p className="text-xs text-gray-600 mt-2 italic">"{app.notes}"</p>
+                      {app.cover_letter && (
+                        <p className="text-xs text-gray-600 mt-2 italic line-clamp-2">
+                          "{app.cover_letter.substring(0, 100)}..."
+                        </p>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${getStatusColor(app.status)}`}>
                         {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
                       </span>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingApp(app)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteApplication(app.id)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -253,194 +207,14 @@ export default function ApplicationTracker() {
             <Briefcase className="h-12 w-12 mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium mb-2">No applications yet</h3>
             <p className="text-gray-600 mb-4 text-sm sm:text-base">
-              Start tracking your job applications to stay organized and follow up effectively.
+              When you apply to jobs, they'll appear here so you can track their status.
             </p>
-            <Button 
-              onClick={() => setShowAddForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your First Application
-            </Button>
+            <p className="text-sm text-gray-500">
+              Try applying to some jobs to see them tracked here!
+            </p>
           </div>
         )}
-
-     
       </CardContent>
     </Card>
-  );
-}
-
-// Form Component
-interface ApplicationFormProps {
-  application?: Application | null;
-  onSave: (app: Application | Omit<Application, 'id'>) => void;
-  onCancel: () => void;
-}
-
-function ApplicationForm({ application, onSave, onCancel }: ApplicationFormProps) {
-  const [formData, setFormData] = useState({
-    jobTitle: application?.jobTitle || '',
-    company: application?.company || '',
-    location: application?.location || '',
-    applicationUrl: application?.applicationUrl || '',
-    status: application?.status || 'applied' as Application['status'],
-    appliedDate: application?.appliedDate || new Date().toISOString().split('T')[0],
-    notes: application?.notes || '',
-    salary: application?.salary || '',
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.jobTitle.trim() || !formData.company.trim()) {
-      alert('Job title and company are required');
-      return;
-    }
-
-    if (application) {
-      onSave({ ...application, ...formData });
-    } else {
-      onSave(formData);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg font-semibold mb-4">
-          {application ? 'Edit Application' : 'Add New Application'}
-        </h3>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Job Title *
-            </label>
-            <input
-              type="text"
-              value={formData.jobTitle}
-              onChange={(e) => setFormData({...formData, jobTitle: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Company *
-            </label>
-            <input
-              type="text"
-              value={formData.company}
-              onChange={(e) => setFormData({...formData, company: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Location
-            </label>
-            <input
-              type="text"
-              value={formData.location}
-              onChange={(e) => setFormData({...formData, location: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., San Francisco, CA or Remote"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Application URL
-            </label>
-            <input
-              type="url"
-              value={formData.applicationUrl}
-              onChange={(e) => setFormData({...formData, applicationUrl: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="https://..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({...formData, status: e.target.value as Application['status']})}
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="applied">Applied</option>
-                <option value="interview">Interview</option>
-                <option value="offer">Offer</option>
-                <option value="rejected">Rejected</option>
-                <option value="withdrawn">Withdrawn</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Applied Date
-              </label>
-              <input
-                type="date"
-                value={formData.appliedDate}
-                onChange={(e) => setFormData({...formData, appliedDate: e.target.value})}
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Salary
-            </label>
-            <input
-              type="text"
-              value={formData.salary}
-              onChange={(e) => setFormData({...formData, salary: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., $80,000 - $100,000"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notes
-            </label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={3}
-              placeholder="Any notes about the application..."
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="submit"
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {application ? 'Update' : 'Add'} Application
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
   );
 }
