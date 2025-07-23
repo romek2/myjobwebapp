@@ -28,9 +28,7 @@ export async function GET(request: NextRequest) {
         resume_file_url,
         resume_filename,
         linkedin_url,
-        portfolio_url,
-        phone,
-        created_at
+        portfolio_url
       `)
       .eq('user_id', session.user.id)
       .order('applied_at', { ascending: false });

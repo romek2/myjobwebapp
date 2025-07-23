@@ -48,7 +48,7 @@ export default function QuickStats({
             <span className="text-sm text-gray-600">Applications</span>
             <div className="flex items-center gap-1">
               <Briefcase className="h-4 w-4 text-green-500" />
-              <span className="font-medium">1
+              <span className="font-medium">0
                 
               </span>
             </div>
