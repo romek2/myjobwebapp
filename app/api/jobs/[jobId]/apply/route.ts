@@ -1,4 +1,4 @@
-// app/api/jobs/[jobId]/apply/route.ts - Direct Application Version
+// app/api/jobs/[jobId]/apply/route.ts - Updated to save resume properly
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -11,13 +11,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get jobId from URL path - your method works perfectly!
+    // Get jobId from URL path
     const url = new URL(req.url);
     const jobId = url.pathname.split('/')[3]; // /api/jobs/[jobId]/apply
 
     const supabase = createServerSupabase();
 
-    // For direct applications, we expect FormData (not JSON)
+    // Get form data
     const formData = await req.formData();
     
     // Extract form fields
@@ -66,22 +66,33 @@ export async function POST(req: NextRequest) {
     let resumeFilename = null;
 
     if (resumeFile && resumeFile.size > 0) {
-      const fileExtension = resumeFile.name.split('.').pop();
-      const fileName = `${session.user.id}/${jobId}/${Date.now()}.${fileExtension}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('resumes')
-        .upload(fileName, resumeFile, {
-          contentType: resumeFile.type,
-          upsert: false
-        });
-
-      if (!uploadError) {
-        const { data: { publicUrl } } = supabase.storage
+      try {
+        // Upload to Supabase Storage
+        const fileName = `applications/${session.user.id}/${jobId}/${Date.now()}-${resumeFile.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
           .from('resumes')
-          .getPublicUrl(fileName);
-        resumeFileUrl = publicUrl;
-        resumeFilename = resumeFile.name;
+          .upload(fileName, resumeFile, {
+            contentType: resumeFile.type,
+            upsert: false
+          });
+
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('resumes')
+            .getPublicUrl(fileName);
+          
+          resumeFileUrl = publicUrl;
+          resumeFilename = resumeFile.name;
+
+          // Also save/update in user_resumes table for future use
+          await saveToUserResumes(supabase, session.user.id, resumeFile, fileName, publicUrl);
+        } else {
+          console.error('Resume upload error:', uploadError);
+          // Continue with application even if resume upload fails
+        }
+      } catch (uploadError) {
+        console.error('Resume upload error:', uploadError);
+        // Continue with application even if resume upload fails
       }
     }
 
@@ -123,5 +134,61 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Error processing application:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// Helper function to save resume to user_resumes table
+async function saveToUserResumes(
+  supabase: any, 
+  userId: string, 
+  file: File, 
+  fileName: string, 
+  publicUrl: string
+) {
+  try {
+    // Basic text extraction (simplified)
+    const text = `Resume: ${file.name}. Size: ${file.size} bytes.`;
+    
+    // Check if user already has a resume
+    const { data: existingResume } = await supabase
+      .from('user_resumes')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    const resumeRecord = {
+      user_id: userId,
+      filename: fileName,
+      original_filename: file.name,
+      file_size: file.size,
+      file_type: file.type,
+      file_url: publicUrl,
+      text_content: text,
+      tech_stack: [], // Could extract tech stack here
+      ats_score: 75, // Default score
+      insights: [],
+      updated_at: new Date().toISOString()
+    };
+
+    if (existingResume) {
+      // Update existing resume
+      await supabase
+        .from('user_resumes')
+        .update(resumeRecord)
+        .eq('id', existingResume.id);
+    } else {
+      // Create new resume record
+      await supabase
+        .from('user_resumes')
+        .insert({
+          ...resumeRecord,
+          created_at: new Date().toISOString()
+        });
+    }
+
+    console.log('Resume saved to user_resumes table');
+  } catch (error) {
+    console.error('Error saving to user_resumes:', error);
+    // Don't fail the application if this fails
   }
 }

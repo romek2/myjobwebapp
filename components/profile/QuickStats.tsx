@@ -187,24 +187,7 @@ export default function QuickStats({ skillsCount, jobAlerts, isPro }: QuickStats
         </div>
 
         {/* Additional Info */}
-        <div className="pt-2 border-t">
-          <div className="text-xs text-gray-500 space-y-1">
-            <div className="flex justify-between">
-              <span>Profile Status:</span>
-              <span className="font-medium">
-                {isPro ? (
-                  <span className="text-green-600">PRO</span>
-                ) : (
-                  <span className="text-gray-600">FREE</span>
-                )}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Total Alerts:</span>
-              <span className="font-medium">{jobAlerts.length}</span>
-            </div>
-          </div>
-        </div>
+     
       </CardContent>
     </Card>
   );
