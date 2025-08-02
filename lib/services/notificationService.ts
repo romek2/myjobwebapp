@@ -1,0 +1,363 @@
+// lib/services/notificationService.ts
+import { createServerSupabase } from '@/lib/supabase';
+import sgMail from '@sendgrid/mail';
+
+// Initialize SendGrid
+sgMail.setApiKey(process.env.SENDGRID_API_KEY as string);
+
+export interface NotificationData {
+  userId: string;
+  applicationId: string;
+  type: 'status_update' | 'interview_scheduled' | 'application_viewed' | 'company_response';
+  title: string;
+  message: string;
+  requiresPro?: boolean;
+  metadata?: Record<string, any>;
+}
+
+export interface EmailNotificationData {
+  to: string;
+  userName: string;
+  jobTitle: string;
+  company: string;
+  status: string;
+  message?: string;
+  interviewDate?: string;
+  isPro: boolean;
+}
+
+export class NotificationService {
+  private supabase = createServerSupabase();
+
+  /**
+   * Create a notification in the database
+   */
+  async createNotification(data: NotificationData): Promise<string | null> {
+    const { data: notification, error } = await this.supabase
+      .from('user_notifications')
+      .insert({
+        user_id: data.userId,
+        application_id: data.applicationId,
+        type: data.type,
+        title: data.title,
+        message: data.message,
+        requires_pro: data.requiresPro || false,
+        metadata: data.metadata || {}
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('Error creating notification:', error);
+      return null;
+    }
+
+    return notification.id;
+  }
+
+  /**
+   * Send email notification based on user's subscription status
+   */
+  async sendEmailNotification(data: EmailNotificationData): Promise<boolean> {
+    try {
+      const subject = this.generateEmailSubject(data.status, data.jobTitle, data.company);
+      const { text, html } = this.generateEmailContent(data);
+
+      const msg = {
+        to: data.to,
+        from: process.env.SENDGRID_FROM_EMAIL as string,
+        subject,
+        text,
+        html,
+      };
+
+      await sgMail.send(msg);
+      console.log(`Email sent to ${data.to} for ${data.status} update`);
+      return true;
+    } catch (error) {
+      console.error('Error sending email notification:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Handle application status update with notifications
+   */
+  async handleStatusUpdate(
+    applicationId: string,
+    newStatus: string,
+    companyNotes?: string,
+    interviewDate?: string
+  ): Promise<void> {
+    // Get application and user data
+    const { data: application } = await this.supabase
+      .from('user_job_applications')
+      .select(`
+        *,
+        user:user_id (
+          name,
+          email,
+          subscriptionStatus
+        )
+      `)
+      .eq('id', applicationId)
+      .single();
+
+    if (!application) {
+      console.error('Application not found for status update');
+      return;
+    }
+
+    const user = application.user as any;
+    const isPro = user?.subscriptionStatus === 'PRO';
+    
+    // Determine if this update requires PRO
+    const requiresPro = ['interview', 'offer', 'rejected'].includes(newStatus);
+
+    // Create appropriate notification based on subscription
+    const notificationData: NotificationData = {
+      userId: application.user_id,
+      applicationId: applicationId,
+      type: this.getNotificationType(newStatus),
+      title: isPro || !requiresPro 
+        ? this.generateNotificationTitle(newStatus, application.job_title)
+        : 'Application Update Available',
+      message: isPro || !requiresPro
+        ? this.generateNotificationMessage(newStatus, application.company, companyNotes, interviewDate)
+        : 'Your application status has been updated. Upgrade to PRO to see details.',
+      requiresPro,
+      metadata: {
+        status: newStatus,
+        companyNotes,
+        interviewDate,
+        jobTitle: application.job_title,
+        company: application.company
+      }
+    };
+
+    // Create notification
+    await this.createNotification(notificationData);
+
+    // Send email notification
+    const emailData: EmailNotificationData = {
+      to: user.email,
+      userName: user.name || user.email.split('@')[0],
+      jobTitle: application.job_title,
+      company: application.company,
+      status: newStatus,
+      message: companyNotes,
+      interviewDate,
+      isPro
+    };
+
+    await this.sendEmailNotification(emailData);
+  }
+
+  /**
+   * Get user's notifications with PRO filtering
+   */
+  async getUserNotifications(userId: string, isPro: boolean = false) {
+    const { data: notifications, error } = await this.supabase
+      .from('user_notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching notifications:', error);
+      return [];
+    }
+
+    // Filter notifications based on subscription status
+    return notifications.map(notification => ({
+      ...notification,
+      // Blur sensitive content for free users
+      title: (!isPro && notification.requires_pro) 
+        ? 'Application Update Available' 
+        : notification.title,
+      message: (!isPro && notification.requires_pro)
+        ? 'Upgrade to PRO to see details'
+        : notification.message,
+      is_blurred: !isPro && notification.requires_pro
+    }));
+  }
+
+  /**
+   * Mark notification as read
+   */
+  async markAsRead(notificationId: string, userId: string): Promise<boolean> {
+    const { error } = await this.supabase
+      .from('user_notifications')
+      .update({ is_read: true })
+      .eq('id', notificationId)
+      .eq('user_id', userId);
+
+    return !error;
+  }
+
+  // Helper methods
+  private getNotificationType(status: string): NotificationData['type'] {
+    switch (status) {
+      case 'interview':
+      case 'interview_scheduled':
+        return 'interview_scheduled';
+      case 'under_review':
+      case 'offer':
+      case 'rejected':
+      case 'hired':
+        return 'status_update';
+      default:
+        return 'status_update';
+    }
+  }
+
+  private generateNotificationTitle(status: string, jobTitle: string): string {
+    switch (status) {
+      case 'under_review':
+        return `Application Under Review - ${jobTitle}`;
+      case 'interview':
+      case 'interview_scheduled':
+        return `Interview Scheduled - ${jobTitle}`;
+      case 'offer':
+        return `Job Offer Received - ${jobTitle}`;
+      case 'rejected':
+        return `Application Update - ${jobTitle}`;
+      case 'hired':
+        return `Congratulations! - ${jobTitle}`;
+      default:
+        return `Application Update - ${jobTitle}`;
+    }
+  }
+
+  private generateNotificationMessage(
+    status: string, 
+    company: string, 
+    notes?: string, 
+    interviewDate?: string
+  ): string {
+    let baseMessage = '';
+    
+    switch (status) {
+      case 'under_review':
+        baseMessage = `${company} is reviewing your application.`;
+        break;
+      case 'interview':
+      case 'interview_scheduled':
+        baseMessage = `${company} has scheduled an interview with you.`;
+        if (interviewDate) {
+          baseMessage += ` Interview date: ${new Date(interviewDate).toLocaleDateString()}`;
+        }
+        break;
+      case 'offer':
+        baseMessage = `Congratulations! ${company} has extended you a job offer.`;
+        break;
+      case 'rejected':
+        baseMessage = `${company} has decided not to move forward with your application.`;
+        break;
+      case 'hired':
+        baseMessage = `Welcome to the team! ${company} has confirmed your hiring.`;
+        break;
+      default:
+        baseMessage = `Your application status with ${company} has been updated.`;
+    }
+
+    if (notes) {
+      baseMessage += `\n\nCompany notes: "${notes}"`;
+    }
+
+    return baseMessage;
+  }
+
+  private generateEmailSubject(status: string, jobTitle: string, company: string): string {
+    switch (status) {
+      case 'interview':
+      case 'interview_scheduled':
+        return `Interview Invitation: ${jobTitle} at ${company}`;
+      case 'offer':
+        return `Job Offer: ${jobTitle} at ${company}`;
+      case 'rejected':
+        return `Application Update: ${jobTitle} at ${company}`;
+      default:
+        return `Application Update: ${jobTitle} at ${company}`;
+    }
+  }
+
+  private generateEmailContent(data: EmailNotificationData): { text: string; html: string } {
+    const { userName, jobTitle, company, status, message, interviewDate, isPro } = data;
+
+    if (!isPro && ['interview', 'offer', 'rejected'].includes(status)) {
+      // Blurred content for free users
+      const text = `Hello ${userName},\n\nYour application for ${jobTitle} at ${company} has been updated.\n\nUpgrade to PRO to see the full details and company response.\n\nUpgrade at: ${process.env.NEXTAUTH_URL}/pricing\n\nBest regards,\nJobMatcher Team`;
+      
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #4a6cf7;">Application Update</h2>
+          <p>Hello ${userName},</p>
+          <p>Your application for <strong>${jobTitle}</strong> at <strong>${company}</strong> has been updated.</p>
+          
+          <div style="background: linear-gradient(45deg, #f0f0f0, #e0e0e0); padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+            <h3 style="margin: 0; color: #666;">🔒 PRO Feature</h3>
+            <p style="margin: 10px 0; color: #666;">Upgrade to see company responses and detailed updates</p>
+            <a href="${process.env.NEXTAUTH_URL}/pricing" style="background: #4a6cf7; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Upgrade to PRO
+            </a>
+          </div>
+          
+          <p>Best regards,<br>JobMatcher Team</p>
+        </div>
+      `;
+      
+      return { text, html };
+    }
+
+    // Full content for PRO users
+    let statusMessage = '';
+    switch (status) {
+      case 'interview':
+      case 'interview_scheduled':
+        statusMessage = `Great news! ${company} would like to interview you for the ${jobTitle} position.`;
+        if (interviewDate) {
+          statusMessage += `\n\nInterview Date: ${new Date(interviewDate).toLocaleString()}`;
+        }
+        break;
+      case 'offer':
+        statusMessage = `Congratulations! ${company} has extended you an offer for the ${jobTitle} position.`;
+        break;
+      case 'rejected':
+        statusMessage = `${company} has decided not to move forward with your application for ${jobTitle}.`;
+        break;
+      default:
+        statusMessage = `Your application for ${jobTitle} at ${company} has been updated.`;
+    }
+
+    const text = `Hello ${userName},\n\n${statusMessage}\n\n${message ? `Company Message: "${message}"\n\n` : ''}View your application: ${process.env.NEXTAUTH_URL}/profile\n\nBest regards,\nJobMatcher Team`;
+    
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #4a6cf7;">Application Update</h2>
+        <p>Hello ${userName},</p>
+        <p>${statusMessage}</p>
+        
+        ${message ? `
+          <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #4a6cf7; margin: 20px 0;">
+            <h4 style="margin: 0 0 10px 0;">Company Message:</h4>
+            <p style="margin: 0; font-style: italic;">"${message}"</p>
+          </div>
+        ` : ''}
+        
+        <div style="margin: 20px 0;">
+          <a href="${process.env.NEXTAUTH_URL}/profile" style="background: #4a6cf7; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            View Application
+          </a>
+        </div>
+        
+        <p>Best regards,<br>JobMatcher Team</p>
+      </div>
+    `;
+
+    return { text, html };
+  }
+}
+
+// Export singleton instance
+export const notificationService = new NotificationService();

@@ -1,129 +1,10 @@
-// app/api/jobs/[jobId]/apply/route.ts - Updated to send employer emails
+// app/api/jobs/[jobId]/apply/route.ts - Updated with enhanced email system
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
-import sgMail from '@sendgrid/mail';
-
-// Initialize SendGrid
-sgMail.setApiKey(process.env.SENDGRID_API_KEY as string);
-
-interface EmployerNotificationData {
-  employerEmail: string;
-  jobTitle: string;
-  company: string;
-  applicantName: string;
-  applicantEmail: string;
-  coverLetter?: string;
-  resumeUrl?: string | null;
-  desiredSalary?: string;
-  availableStartDate?: string;
-  linkedinUrl?: string;
-  portfolioUrl?: string;
-  applicationId: string;
-}
-
-// Function to send email notification to employer
-async function sendEmployerNotification(data: EmployerNotificationData) {
-  const {
-    employerEmail,
-    jobTitle,
-    company,
-    applicantName,
-    applicantEmail,
-    coverLetter,
-    resumeUrl,
-    desiredSalary,
-    availableStartDate,
-    linkedinUrl,
-    portfolioUrl,
-    applicationId
-  } = data;
-
-  // Create email content
-  const emailSubject = `New Application: ${jobTitle} at ${company}`;
-  
-  const emailText = `
-New Job Application Received
-
-Position: ${jobTitle}
-Company: ${company}
-Application ID: ${applicationId}
-
-APPLICANT INFORMATION:
-Name: ${applicantName}
-Email: ${applicantEmail}
-${desiredSalary ? `Desired Salary: ${parseInt(desiredSalary).toLocaleString()}` : ''}
-${availableStartDate ? `Available Start Date: ${new Date(availableStartDate).toLocaleDateString()}` : ''}
-${linkedinUrl ? `LinkedIn: ${linkedinUrl}` : ''}
-${portfolioUrl ? `Portfolio: ${portfolioUrl}` : ''}
-
-COVER LETTER:
-${coverLetter || 'No cover letter provided.'}
-
-${resumeUrl ? `RESUME: ${resumeUrl}` : 'No resume attached.'}
-
----
-This application was submitted through JobMatcher.
-Reply directly to this email to contact the applicant.
-  `;
-
-  const emailHtml = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #4a6cf7; border-bottom: 2px solid #4a6cf7; padding-bottom: 10px;">
-        New Job Application
-      </h2>
-      
-      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
-        <h3 style="margin: 0 0 10px 0; color: #333;">Position Details</h3>
-        <p style="margin: 5px 0;"><strong>Job Title:</strong> ${jobTitle}</p>
-        <p style="margin: 5px 0;"><strong>Company:</strong> ${company}</p>
-        <p style="margin: 5px 0;"><strong>Application ID:</strong> ${applicationId}</p>
-      </div>
-
-      <div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
-        <h3 style="margin: 0 0 10px 0; color: #333;">Applicant Information</h3>
-        <p style="margin: 5px 0;"><strong>Name:</strong> ${applicantName}</p>
-        <p style="margin: 5px 0;"><strong>Email:</strong> <a href="mailto:${applicantEmail}">${applicantEmail}</a></p>
-        ${desiredSalary ? `<p style="margin: 5px 0;"><strong>Desired Salary:</strong> ${parseInt(desiredSalary).toLocaleString()}</p>` : ''}
-        ${availableStartDate ? `<p style="margin: 5px 0;"><strong>Available Start Date:</strong> ${new Date(availableStartDate).toLocaleDateString()}</p>` : ''}
-        ${linkedinUrl ? `<p style="margin: 5px 0;"><strong>LinkedIn:</strong> <a href="${linkedinUrl}" target="_blank">${linkedinUrl}</a></p>` : ''}
-        ${portfolioUrl ? `<p style="margin: 5px 0;"><strong>Portfolio:</strong> <a href="${portfolioUrl}" target="_blank">${portfolioUrl}</a></p>` : ''}
-      </div>
-
-      ${coverLetter ? `
-        <div style="background-color: #f1f8e9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <h3 style="margin: 0 0 10px 0; color: #333;">Cover Letter</h3>
-          <div style="background-color: white; padding: 15px; border-radius: 3px; white-space: pre-wrap;">${coverLetter}</div>
-        </div>
-      ` : ''}
-
-      ${resumeUrl ? `
-        <div style="background-color: #fff3e0; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <h3 style="margin: 0 0 10px 0; color: #333;">Resume</h3>
-          <p><a href="${resumeUrl}" target="_blank" style="color: #4a6cf7; font-weight: bold;">📄 Download Resume</a></p>
-        </div>
-      ` : ''}
-
-      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px;">
-        <p>This application was submitted through JobMatcher.</p>
-        <p>Reply directly to this email to contact the applicant at ${applicantEmail}</p>
-      </div>
-    </div>
-  `;
-
-  // Send the email
-  const msg = {
-    to: employerEmail,
-    from: process.env.SENDGRID_FROM_EMAIL as string,
-    replyTo: applicantEmail, // So employer can reply directly to applicant
-    subject: emailSubject,
-    text: emailText,
-    html: emailHtml,
-  };
-
-  await sgMail.send(msg);
-}
+import { applicationEmailService } from '@/lib/services/applicationEmailService';
+import { notificationService } from '@/lib/services/notificationService';
 
 export async function POST(req: NextRequest) {
   try {
@@ -233,7 +114,8 @@ export async function POST(req: NextRequest) {
         desired_salary: desiredSalary ? parseInt(desiredSalary) : null,
         available_start_date: availableStartDate || null,
         linkedin_url: linkedinUrl,
-        portfolio_url: portfolioUrl
+        portfolio_url: portfolioUrl,
+        phone: phone
       })
       .select()
       .single();
@@ -243,13 +125,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 });
     }
 
-    // Send email notification to employer if email is provided
+    // Send enhanced email notification to employer if email is provided
     if (job.employer_email) {
       try {
-        await sendEmployerNotification({
+        await applicationEmailService.sendApplicationToEmployer({
           employerEmail: job.employer_email,
           jobTitle: job.title,
           company: job.company,
+          jobId: jobId,
+          applicationId: application.id,
           applicantName: session.user.name || session.user.email || 'Anonymous',
           applicantEmail: session.user.email || '',
           coverLetter,
@@ -258,13 +142,46 @@ export async function POST(req: NextRequest) {
           availableStartDate,
           linkedinUrl,
           portfolioUrl,
-          applicationId: application.id
+          phone
         });
-        console.log(`Email sent to employer: ${job.employer_email}`);
+        console.log(`Enhanced email sent to employer: ${job.employer_email}`);
       } catch (emailError) {
         console.error('Failed to send employer notification:', emailError);
         // Don't fail the application if email fails
       }
+    }
+
+    // Send confirmation email to applicant
+    try {
+      await applicationEmailService.sendApplicationConfirmation(
+        session.user.email || '',
+        session.user.name || session.user.email?.split('@')[0] || 'User',
+        job.title,
+        job.company
+      );
+    } catch (confirmationError) {
+      console.error('Failed to send application confirmation:', confirmationError);
+      // Don't fail the application if confirmation email fails
+    }
+
+    // Create initial notification for the user
+    try {
+      await notificationService.createNotification({
+        userId: session.user.id,
+        applicationId: application.id,
+        type: 'status_update',
+        title: `Application Submitted - ${job.title}`,
+        message: `Your application for ${job.title} at ${job.company} has been successfully submitted.`,
+        requiresPro: false, // Application confirmation doesn't require PRO
+        metadata: {
+          status: 'applied',
+          jobTitle: job.title,
+          company: job.company
+        }
+      });
+    } catch (notificationError) {
+      console.error('Failed to create notification:', notificationError);
+      // Don't fail the application if notification creation fails
     }
 
     return NextResponse.json({

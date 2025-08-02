@@ -1,0 +1,306 @@
+// lib/services/applicationEmailService.ts
+import sgMail from '@sendgrid/mail';
+import { magicLinkService } from './magicLinkService';
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY as string);
+
+export interface EnhancedApplicationEmailData {
+  employerEmail: string;
+  jobTitle: string;
+  company: string;
+  jobId: string;
+  applicationId: string;
+  applicantName: string;
+  applicantEmail: string;
+  coverLetter?: string;
+  resumeUrl?: string | null;
+  desiredSalary?: string;
+  availableStartDate?: string;
+  linkedinUrl?: string;
+  portfolioUrl?: string;
+  phone?: string;
+}
+
+export class ApplicationEmailService {
+  /**
+   * Send enhanced application email with magic link to employer
+   */
+  async sendApplicationToEmployer(data: EnhancedApplicationEmailData): Promise<boolean> {
+    try {
+      // Generate magic link for company access
+      const magicToken = await magicLinkService.generateMagicLink(
+        data.employerEmail,
+        data.jobId,
+        data.applicationId
+      );
+      
+      const magicLinkUrl = magicLinkService.generateMagicLinkUrl(magicToken);
+
+      const subject = `New Application: ${data.jobTitle} at ${data.company}`;
+      const { text, html } = this.generateEnhancedEmailContent(data, magicLinkUrl);
+
+      const msg = {
+        to: data.employerEmail,
+        from: process.env.SENDGRID_FROM_EMAIL as string,
+        replyTo: data.applicantEmail,
+        subject,
+        text,
+        html,
+      };
+
+      await sgMail.send(msg);
+      console.log(`Enhanced application email sent to ${data.employerEmail}`);
+      return true;
+    } catch (error) {
+      console.error('Error sending enhanced application email:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Generate enhanced email content with magic link
+   */
+  private generateEnhancedEmailContent(
+    data: EnhancedApplicationEmailData, 
+    magicLinkUrl: string
+  ): { text: string; html: string } {
+    const {
+      jobTitle,
+      company,
+      applicationId,
+      applicantName,
+      applicantEmail,
+      coverLetter,
+      resumeUrl,
+      desiredSalary,
+      availableStartDate,
+      linkedinUrl,
+      portfolioUrl,
+      phone
+    } = data;
+
+    // Plain text version
+    const text = `
+NEW JOB APPLICATION RECEIVED
+
+Position: ${jobTitle}
+Company: ${company}
+Application ID: ${applicationId}
+
+APPLICANT INFORMATION:
+Name: ${applicantName}
+Email: ${applicantEmail}
+${phone ? `Phone: ${phone}` : ''}
+${desiredSalary ? `Desired Salary: $${parseInt(desiredSalary).toLocaleString()}` : ''}
+${availableStartDate ? `Available Start Date: ${new Date(availableStartDate).toLocaleDateString()}` : ''}
+${linkedinUrl ? `LinkedIn: ${linkedinUrl}` : ''}
+${portfolioUrl ? `Portfolio: ${portfolioUrl}` : ''}
+
+COVER LETTER:
+${coverLetter || 'No cover letter provided.'}
+
+${resumeUrl ? `RESUME: ${resumeUrl}` : 'No resume attached.'}
+
+MANAGE THIS APPLICATION:
+Click here to respond to this application: ${magicLinkUrl}
+
+This link allows you to:
+- Update application status
+- Schedule interviews
+- Add notes for your team
+- Communicate with the candidate
+
+Link expires in 7 days for security.
+
+---
+This application was submitted through JobMatcher.
+Reply directly to this email to contact the applicant at ${applicantEmail}
+    `.trim();
+
+    // HTML version with enhanced styling
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>New Job Application</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #4a6cf7;">
+          <h1 style="color: #4a6cf7; margin: 0; font-size: 28px;">New Job Application</h1>
+          <p style="color: #666; margin: 5px 0 0 0; font-size: 16px;">JobMatcher Platform</p>
+        </div>
+
+        <!-- Quick Action Buttons -->
+        <div style="text-align: center; margin-bottom: 30px;">
+          <a href="${magicLinkUrl}" style="background: linear-gradient(135deg, #4a6cf7 0%, #3b82f6 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(74, 108, 247, 0.3); margin: 0 10px 10px 0;">
+            📋 Manage Application
+          </a>
+          <a href="mailto:${applicantEmail}" style="background: #10b981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); margin: 0 10px 10px 0;">
+            📧 Contact Candidate
+          </a>
+        </div>
+
+        <!-- Position Details -->
+        <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 4px solid #4a6cf7;">
+          <h2 style="margin: 0 0 15px 0; color: #1e293b; font-size: 20px;">📍 Position Details</h2>
+          <div style="display: grid; gap: 8px;">
+            <p style="margin: 0;"><strong>Job Title:</strong> ${jobTitle}</p>
+            <p style="margin: 0;"><strong>Company:</strong> ${company}</p>
+            <p style="margin: 0;"><strong>Application ID:</strong> ${applicationId}</p>
+          </div>
+        </div>
+
+        <!-- Candidate Information -->
+        <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 4px solid #10b981;">
+          <h2 style="margin: 0 0 15px 0; color: #1e293b; font-size: 20px;">👤 Candidate Information</h2>
+          <div style="display: grid; gap: 8px;">
+            <p style="margin: 0;"><strong>Name:</strong> ${applicantName}</p>
+            <p style="margin: 0;"><strong>Email:</strong> <a href="mailto:${applicantEmail}" style="color: #4a6cf7; text-decoration: none;">${applicantEmail}</a></p>
+            ${phone ? `<p style="margin: 0;"><strong>Phone:</strong> ${phone}</p>` : ''}
+            ${desiredSalary ? `<p style="margin: 0;"><strong>Desired Salary:</strong> $${parseInt(desiredSalary).toLocaleString()}</p>` : ''}
+            ${availableStartDate ? `<p style="margin: 0;"><strong>Available Start Date:</strong> ${new Date(availableStartDate).toLocaleDateString()}</p>` : ''}
+            ${linkedinUrl ? `<p style="margin: 0;"><strong>LinkedIn:</strong> <a href="${linkedinUrl}" target="_blank" style="color: #4a6cf7; text-decoration: none;">${linkedinUrl}</a></p>` : ''}
+            ${portfolioUrl ? `<p style="margin: 0;"><strong>Portfolio:</strong> <a href="${portfolioUrl}" target="_blank" style="color: #4a6cf7; text-decoration: none;">${portfolioUrl}</a></p>` : ''}
+          </div>
+        </div>
+
+        ${coverLetter ? `
+        <!-- Cover Letter -->
+        <div style="background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 4px solid #f59e0b;">
+          <h2 style="margin: 0 0 15px 0; color: #1e293b; font-size: 20px;">💭 Cover Letter</h2>
+          <div style="background: white; padding: 15px; border-radius: 8px; white-space: pre-wrap; font-family: Georgia, serif; line-height: 1.7; color: #374151;">
+${coverLetter}
+          </div>
+        </div>
+        ` : ''}
+
+        ${resumeUrl ? `
+        <!-- Resume -->
+        <div style="background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 4px solid #ec4899;">
+          <h2 style="margin: 0 0 15px 0; color: #1e293b; font-size: 20px;">📄 Resume</h2>
+          <div style="text-align: center;">
+            <a href="${resumeUrl}" target="_blank" style="background: #ec4899; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600;">
+              📄 Download Resume
+            </a>
+          </div>
+        </div>
+        ` : ''}
+
+        <!-- Management Portal Info -->
+        <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 4px solid #0ea5e9;">
+          <h2 style="margin: 0 0 15px 0; color: #1e293b; font-size: 20px;">🔧 Application Management</h2>
+          <p style="margin: 0 0 15px 0; color: #475569;">Use the link below to manage this application:</p>
+          
+          <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <a href="${magicLinkUrl}" style="color: #4a6cf7; font-weight: 600; text-decoration: none; word-break: break-all;">
+              ${magicLinkUrl}
+            </a>
+          </div>
+          
+          <div style="font-size: 14px; color: #64748b;">
+            <p style="margin: 5px 0;"><strong>✅ Update application status</strong> (Under Review, Interview, Offer, etc.)</p>
+            <p style="margin: 5px 0;"><strong>📅 Schedule interviews</strong> with date and time</p>
+            <p style="margin: 5px 0;"><strong>📝 Add internal notes</strong> for your hiring team</p>
+            <p style="margin: 5px 0;"><strong>💬 Send messages</strong> to the candidate</p>
+            <p style="margin: 5px 0; color: #f59e0b;"><strong>🔒 Secure link expires in 7 days</strong></p>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 25px;">
+          <h3 style="margin: 0 0 15px 0; color: #1e293b; font-size: 18px;">⚡ Quick Actions</h3>
+          <div style="display: grid; gap: 10px;">
+            <a href="${magicLinkUrl}?action=review" style="background: #0ea5e9; color: white; padding: 10px 15px; text-decoration: none; border-radius: 6px; display: block; text-align: center; font-weight: 500;">
+              👀 Mark as Under Review
+            </a>
+            <a href="${magicLinkUrl}?action=interview" style="background: #8b5cf6; color: white; padding: 10px 15px; text-decoration: none; border-radius: 6px; display: block; text-align: center; font-weight: 500;">
+              📞 Schedule Interview
+            </a>
+            <a href="mailto:${applicantEmail}?subject=Re: ${jobTitle} Application" style="background: #10b981; color: white; padding: 10px 15px; text-decoration: none; border-radius: 6px; display: block; text-align: center; font-weight: 500;">
+              📧 Email Candidate Directly
+            </a>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 14px; text-align: center;">
+          <p style="margin: 0 0 10px 0;">This application was submitted through <strong>JobMatcher</strong></p>
+          <p style="margin: 0 0 10px 0;">Reply directly to this email to contact the applicant at <a href="mailto:${applicantEmail}" style="color: #4a6cf7;">${applicantEmail}</a></p>
+          <p style="margin: 0; font-size: 12px; color: #94a3b8;">
+            Secure link expires on ${new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+          </p>
+        </div>
+
+      </body>
+      </html>
+    `;
+
+    return { text, html };
+  }
+
+  /**
+   * Send confirmation email to applicant
+   */
+  async sendApplicationConfirmation(
+    applicantEmail: string,
+    applicantName: string,
+    jobTitle: string,
+    company: string
+  ): Promise<boolean> {
+    try {
+      const subject = `Application Confirmed: ${jobTitle} at ${company}`;
+      
+      const text = `Hello ${applicantName},\n\nYour application for ${jobTitle} at ${company} has been successfully submitted!\n\nYou can track your application status in your JobMatcher dashboard: ${process.env.NEXTAUTH_URL}/profile\n\nWe'll notify you of any updates from the employer.\n\nBest regards,\nJobMatcher Team`;
+      
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #4a6cf7; margin: 0;">Application Confirmed ✅</h1>
+          </div>
+          
+          <p>Hello ${applicantName},</p>
+          
+          <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4a6cf7;">
+            <h3 style="margin: 0 0 10px 0; color: #1e293b;">Your application has been submitted!</h3>
+            <p style="margin: 0;"><strong>Position:</strong> ${jobTitle}</p>
+            <p style="margin: 5px 0 0 0;"><strong>Company:</strong> ${company}</p>
+          </div>
+          
+          <p>You can track your application status and any updates from the employer in your JobMatcher dashboard.</p>
+          
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="${process.env.NEXTAUTH_URL}/profile" style="background: #4a6cf7; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">
+              View Application Status
+            </a>
+          </div>
+          
+          <p style="color: #64748b; font-size: 14px;">We'll send you email notifications when the employer updates your application status.</p>
+          
+          <p>Best regards,<br>JobMatcher Team</p>
+        </div>
+      `;
+
+      const msg = {
+        to: applicantEmail,
+        from: process.env.SENDGRID_FROM_EMAIL as string,
+        subject,
+        text,
+        html,
+      };
+
+      await sgMail.send(msg);
+      console.log(`Application confirmation sent to ${applicantEmail}`);
+      return true;
+    } catch (error) {
+      console.error('Error sending application confirmation:', error);
+      return false;
+    }
+  }
+}
+
+// Export singleton instance
+export const applicationEmailService = new ApplicationEmailService();
