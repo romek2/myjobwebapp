@@ -1,4 +1,4 @@
-// components/profile/EnhancedApplicationTracker.tsx
+// components/profile/ApplicationTracker.tsx - FIXED VERSION
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 
 interface Application {
-  id: string;
+  id: string | number; // ✅ FIXED: Handle both types
   job_id: string;
   job_title: string;
   company: string;
@@ -46,8 +46,8 @@ interface Application {
 }
 
 interface Notification {
-  id: string;
-  application_id: string;
+  id: string | number; // ✅ FIXED: Handle both types
+  application_id: string | number; // ✅ FIXED: Handle both types
   type: string;
   title: string;
   message: string;
@@ -58,7 +58,19 @@ interface Notification {
   metadata?: any;
 }
 
-export default function EnhancedApplicationTracker() {
+// ✅ FIXED: Helper function to safely convert ID to string
+const safeIdToString = (id: string | number | undefined | null): string => {
+  if (id === undefined || id === null) return '';
+  return String(id);
+};
+
+// ✅ FIXED: Helper function to safely slice strings
+const safeSlice = (str: string | number | undefined | null, start: number, end?: number): string => {
+  const safeStr = safeIdToString(str);
+  return safeStr.slice(start, end);
+};
+
+export default function ApplicationTracker() {
   const { data: session } = useSession();
   const router = useRouter();
   const [applications, setApplications] = useState<Application[]>([]);
@@ -106,12 +118,13 @@ export default function EnhancedApplicationTracker() {
     loadData();
   }, [session]);
 
-  const markNotificationAsRead = async (notificationId: string) => {
+  const markNotificationAsRead = async (notificationId: string | number) => {
     try {
-      await fetch(`/api/notifications/${notificationId}/read`, { method: 'POST' });
+      const idString = safeIdToString(notificationId);
+      await fetch(`/api/notifications/${idString}/read`, { method: 'POST' });
       setNotifications(prev => 
         prev.map(notification => 
-          notification.id === notificationId 
+          safeIdToString(notification.id) === idString
             ? { ...notification, is_read: true }
             : notification
         )
@@ -145,8 +158,9 @@ export default function EnhancedApplicationTracker() {
     }
   };
 
-  const getApplicationNotifications = (applicationId: string) => {
-    return notifications.filter(n => n.application_id === applicationId);
+  const getApplicationNotifications = (applicationId: string | number) => {
+    const appIdString = safeIdToString(applicationId);
+    return notifications.filter(n => safeIdToString(n.application_id) === appIdString);
   };
 
   if (!session) {
@@ -225,7 +239,7 @@ export default function EnhancedApplicationTracker() {
               const unreadNotifications = appNotifications.filter(n => !n.is_read);
               
               return (
-                <div key={app.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                <div key={safeIdToString(app.id)} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
@@ -269,7 +283,7 @@ export default function EnhancedApplicationTracker() {
                         <div className="space-y-2">
                           {appNotifications.slice(0, 3).map((notification) => (
                             <div 
-                              key={notification.id}
+                              key={safeIdToString(notification.id)} // ✅ FIXED: Safe ID conversion
                               className={`p-3 rounded-lg border text-sm ${
                                 notification.is_read 
                                   ? 'bg-gray-50 border-gray-200' 
