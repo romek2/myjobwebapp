@@ -1,4 +1,4 @@
-// lib/services/magicLinkService.ts - SIMPLIFIED TYPE-SAFE VERSION
+// lib/services/magicLinkService.ts - COMPLETE FIXED VERSION
 import { createServerSupabase } from '@/lib/supabase';
 import crypto from 'crypto';
 
@@ -131,7 +131,7 @@ export class MagicLinkService {
   }
 
   /**
-   * Get application data for magic link - TYPE-SAFE VERSION
+   * Get application data for magic link - COMPLETE FIXED VERSION
    */
   async getApplicationForMagicLink(token: string) {
     console.log(`🔍 Getting application data for token: ${token}`);

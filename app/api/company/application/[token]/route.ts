@@ -1,4 +1,4 @@
-// app/api/company/application/[token]/route.ts - FIXED VERSION
+// app/api/company/application/[token]/route.ts - COMPLETE FIXED VERSION
 import { NextRequest, NextResponse } from 'next/server';
 import { magicLinkService } from '@/lib/services/magicLinkService';
 
