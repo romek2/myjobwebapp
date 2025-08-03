@@ -1,4 +1,4 @@
-// app/company/application/[token]/page.tsx
+// app/company/application/[token]/page.tsx - FIXED VERSION
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,7 +25,7 @@ import {
 
 interface ApplicationData {
   application: {
-    id: string;
+    id: string | number;
     job_title: string;
     company: string;
     status: string;
@@ -37,6 +37,10 @@ interface ApplicationData {
     linkedin_url?: string;
     portfolio_url?: string;
     phone?: string;
+    company_notes?: string;
+    interview_date?: string;
+    interviewer_name?: string;
+    interview_location?: string;
     user: {
       name: string;
       email: string;
@@ -51,7 +55,7 @@ interface ApplicationData {
 
 export default function CompanyApplicationPortal() {
   const params = useParams();
-  const token = params.token as string;
+  const token = params?.token as string;
   
   const [applicationData, setApplicationData] = useState<ApplicationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,6 +74,9 @@ export default function CompanyApplicationPortal() {
   useEffect(() => {
     if (token) {
       loadApplicationData();
+    } else {
+      setError('No token provided in URL');
+      setIsLoading(false);
     }
   }, [token]);
 
@@ -78,37 +85,60 @@ export default function CompanyApplicationPortal() {
       setIsLoading(true);
       setError(null);
       
+      console.log('🔍 Loading application data for token:', token);
+      
       const response = await fetch(`/api/company/application/${token}`);
       
+      console.log('📡 API Response status:', response.status);
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API Error:', errorText);
+        
         if (response.status === 404) {
           throw new Error('Application not found or link has expired');
         } else if (response.status === 403) {
           throw new Error('Access denied - invalid or expired link');
         } else {
-          throw new Error('Failed to load application');
+          throw new Error(`Failed to load application (${response.status})`);
         }
       }
       
       const data = await response.json();
+      console.log('✅ Received data:', data);
+      
+      // Validate the response structure
+      if (!data || !data.application) {
+        console.error('❌ Invalid response structure:', data);
+        throw new Error('Invalid response from server');
+      }
+
+      // Additional validation for required fields
+      if (!data.application.company) {
+        console.error('❌ Missing company field in application:', data.application);
+        throw new Error('Application data is incomplete');
+      }
+      
       setApplicationData(data);
       setSelectedStatus(data.application.status);
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load application';
+      console.error('💥 Error in loadApplicationData:', err);
       setError(errorMessage);
-      console.error('Error loading application:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleStatusUpdate = async () => {
-    if (!applicationData) return;
+    if (!applicationData || !token) return;
     
     try {
       setIsUpdating(true);
       setError(null);
+      
+      console.log('📤 Updating status to:', selectedStatus);
       
       const response = await fetch(`/api/company/application/${token}/update`, {
         method: 'POST',
@@ -128,27 +158,34 @@ export default function CompanyApplicationPortal() {
       }
 
       const result = await response.json();
+      console.log('✅ Update successful:', result);
       
       // Update local state
       setApplicationData(prev => prev ? {
         ...prev,
         application: {
           ...prev.application,
-          status: selectedStatus
+          status: selectedStatus,
+          company_notes: companyNotes,
+          interview_date: interviewDate || prev.application.interview_date,
+          interviewer_name: interviewer || prev.application.interviewer_name,
+          interview_location: location || prev.application.interview_location,
         }
       } : null);
       
       setUpdateSuccess(true);
-      setTimeout(() => setUpdateSuccess(false), 3000);
+      setTimeout(() => setUpdateSuccess(false), 5000);
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update application';
+      console.error('💥 Update error:', err);
       setError(errorMessage);
     } finally {
       setIsUpdating(false);
     }
   };
 
+  // Helper functions
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'applied': return <Clock className="h-4 w-4 text-blue-500" />;
@@ -173,6 +210,15 @@ export default function CompanyApplicationPortal() {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -180,12 +226,14 @@ export default function CompanyApplicationPortal() {
           <CardContent className="p-8 text-center">
             <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-500" />
             <p className="text-gray-600">Loading application...</p>
+            <p className="text-xs text-gray-400 mt-2">Token: {token?.substring(0, 8)}...</p>
           </CardContent>
         </Card>
       </div>
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -194,15 +242,25 @@ export default function CompanyApplicationPortal() {
             <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
             <h2 className="text-xl font-semibold mb-2">Access Error</h2>
             <p className="text-gray-600 mb-4">{error}</p>
-            <p className="text-sm text-gray-500">
-              Please check your email for a valid link or contact the JobMatcher team.
+            <p className="text-sm text-gray-500 mb-4">
+              Token: {token?.substring(0, 8)}...
             </p>
+            <div className="space-y-2">
+              <Button onClick={loadApplicationData} variant="outline" className="w-full">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+              <p className="text-xs text-gray-400">
+                If this continues, please contact JobMatcher support.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
 
+  // No data state
   if (!applicationData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -211,6 +269,7 @@ export default function CompanyApplicationPortal() {
             <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-500" />
             <h2 className="text-xl font-semibold mb-2">No Application Found</h2>
             <p className="text-gray-600">Unable to load application data.</p>
+            <p className="text-xs text-gray-400 mt-2">Token: {token?.substring(0, 8)}...</p>
           </CardContent>
         </Card>
       </div>
@@ -263,7 +322,7 @@ export default function CompanyApplicationPortal() {
               <CardContent className="space-y-4">
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <h3 className="font-semibold text-lg">{application.job_title}</h3>
-                  <p className="text-gray-600">{job.company} • {job.location}</p>
+                  <p className="text-gray-600">{application.company} • {job?.location || 'Location not specified'}</p>
                   <div className="flex items-center gap-2 mt-2">
                     <span className="text-sm text-gray-500">Status:</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${getStatusColor(application.status)}`}>
@@ -305,7 +364,7 @@ export default function CompanyApplicationPortal() {
                   <div className="flex items-center gap-3">
                     <Calendar className="h-4 w-4 text-gray-500" />
                     <div>
-                      <p className="font-medium">{new Date(application.applied_at).toLocaleDateString()}</p>
+                      <p className="font-medium">{formatDate(application.applied_at)}</p>
                       <p className="text-sm text-gray-500">Applied</p>
                     </div>
                   </div>
@@ -324,7 +383,7 @@ export default function CompanyApplicationPortal() {
                     <div className="flex items-center gap-3">
                       <Calendar className="h-4 w-4 text-gray-500" />
                       <div>
-                        <p className="font-medium">{new Date(application.available_start_date).toLocaleDateString()}</p>
+                        <p className="font-medium">{formatDate(application.available_start_date)}</p>
                         <p className="text-sm text-gray-500">Available Start</p>
                       </div>
                     </div>
@@ -421,7 +480,7 @@ export default function CompanyApplicationPortal() {
                   </select>
                 </div>
 
-                {/* Interview Details (show when interview is selected) */}
+                {/* Interview Details */}
                 {selectedStatus === 'interview' && (
                   <div className="space-y-3 p-4 bg-purple-50 rounded-lg border border-purple-200">
                     <h4 className="font-medium text-purple-800">Interview Details</h4>
@@ -501,58 +560,6 @@ export default function CompanyApplicationPortal() {
               </CardContent>
             </Card>
 
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button
-                  onClick={() => {
-                    setSelectedStatus('under_review');
-                    setCompanyNotes('Thank you for your application. We are currently reviewing your qualifications and will be in touch soon.');
-                  }}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Clock className="mr-2 h-4 w-4" />
-                  Mark as Under Review
-                </Button>
-                
-                <Button
-                  onClick={() => {
-                    setSelectedStatus('interview');
-                    setCompanyNotes('Congratulations! We would like to schedule an interview with you.');
-                  }}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Schedule Interview
-                </Button>
-                
-                <Button
-                  onClick={() => {
-                    setSelectedStatus('rejected');
-                    setCompanyNotes('Thank you for your interest in this position. While your background is impressive, we have decided to move forward with other candidates.');
-                  }}
-                  variant="outline"
-                  className="w-full justify-start"
-                >
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Send Rejection
-                </Button>
-                
-                <a
-                  href={`mailto:${application.user.email}?subject=Re: ${application.job_title} Application`}
-                  className="w-full inline-flex items-center justify-start px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm font-medium"
-                >
-                  <Mail className="mr-2 h-4 w-4" />
-                  Email Candidate Directly
-                </a>
-              </CardContent>
-            </Card>
-
             {/* Application Info */}
             <Card>
               <CardHeader>
@@ -561,7 +568,7 @@ export default function CompanyApplicationPortal() {
               <CardContent className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Application ID:</span>
-                  <span className="font-mono">{application.id.slice(0, 8)}...</span>
+                  <span className="font-mono">{String(application.id).slice(0, 8)}...</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Submitted:</span>
@@ -570,6 +577,10 @@ export default function CompanyApplicationPortal() {
                 <div className="flex justify-between">
                   <span className="text-gray-500">Platform:</span>
                   <span>JobMatcher</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Token:</span>
+                  <span className="font-mono text-xs">{token?.substring(0, 8)}...</span>
                 </div>
               </CardContent>
             </Card>
