@@ -1,4 +1,4 @@
-// components/profile/ApplicationTracker.tsx - FIXED VERSION
+// components/profile/ApplicationTracker.tsx - FIXED VERSION WITH BLUR FEATURE
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -62,12 +62,6 @@ interface Notification {
 const safeIdToString = (id: string | number | undefined | null): string => {
   if (id === undefined || id === null) return '';
   return String(id);
-};
-
-// ✅ FIXED: Helper function to safely slice strings
-const safeSlice = (str: string | number | undefined | null, start: number, end?: number): string => {
-  const safeStr = safeIdToString(str);
-  return safeStr.slice(start, end);
 };
 
 export default function ApplicationTracker() {
