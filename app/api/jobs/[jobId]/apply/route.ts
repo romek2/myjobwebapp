@@ -1,4 +1,4 @@
-// app/api/jobs/[jobId]/apply/route.ts - Updated with enhanced email system
+// app/api/jobs/[jobId]/apply/route.ts - COMPLETE FIXED VERSION
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -17,6 +17,12 @@ export async function POST(req: NextRequest) {
     const url = new URL(req.url);
     const jobId = url.pathname.split('/')[3]; // /api/jobs/[jobId]/apply
 
+    // 🔍 Debug logging
+    console.log('🔍 APPLICATION DEBUG:');
+    console.log('Raw jobId from URL:', jobId);
+    console.log('jobId type:', typeof jobId);
+    console.log('User ID:', session.user.id);
+
     const supabase = createServerSupabase();
 
     // Get form data
@@ -31,16 +37,30 @@ export async function POST(req: NextRequest) {
     const portfolioUrl = formData.get('portfolioUrl') as string;
     const resumeFile = formData.get('resume') as File;
 
-    // Get job details
+    // Convert jobId to integer (your jobs table uses integer IDs)
+    const jobIdInt = parseInt(jobId);
+    if (isNaN(jobIdInt)) {
+      console.log('❌ Invalid job ID - not a number:', jobId);
+      return NextResponse.json({ error: 'Invalid job ID format' }, { status: 400 });
+    }
+
+    console.log('✅ Converted jobId to integer:', jobIdInt);
+
+    // Get job details with integer ID
     const { data: job, error: jobError } = await supabase
       .from('jobs')
-      .select('title, company, application_type, employer_email')
-      .eq('id', jobId)
+      .select('id, title, company, application_type, employer_email')
+      .eq('id', jobIdInt)
       .single();
 
+    console.log('Job lookup result:', { job, jobError });
+
     if (jobError || !job) {
+      console.log('❌ Job not found with ID:', jobIdInt);
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
+
+    console.log('✅ Job found:', job.title, 'at', job.company);
 
     // Check if job allows direct applications
     if (job.application_type === 'external') {
@@ -49,19 +69,22 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Check for duplicate application
+    // Check for duplicate application using integer job_id
     const { data: existingApplication } = await supabase
       .from('user_job_applications')
       .select('id')
       .eq('user_id', session.user.id)
-      .eq('job_id', jobId)
+      .eq('job_id', jobIdInt)
       .single();
 
     if (existingApplication) {
+      console.log('❌ Duplicate application found');
       return NextResponse.json({ 
         error: 'You have already applied to this job' 
       }, { status: 409 });
     }
+
+    console.log('✅ No duplicate application found');
 
     // Handle resume upload if provided
     let resumeFileUrl = null;
@@ -69,8 +92,10 @@ export async function POST(req: NextRequest) {
 
     if (resumeFile && resumeFile.size > 0) {
       try {
+        console.log('📎 Processing resume upload:', resumeFile.name, resumeFile.size, 'bytes');
+        
         // Upload to Supabase Storage
-        const fileName = `applications/${session.user.id}/${jobId}/${Date.now()}-${resumeFile.name}`;
+        const fileName = `applications/${session.user.id}/${jobIdInt}/${Date.now()}-${resumeFile.name}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('resumes')
           .upload(fileName, resumeFile, {
@@ -85,45 +110,60 @@ export async function POST(req: NextRequest) {
           
           resumeFileUrl = publicUrl;
           resumeFilename = resumeFile.name;
+          console.log('✅ Resume uploaded successfully:', fileName);
 
           // Also save/update in user_resumes table for future use
           await saveToUserResumes(supabase, session.user.id, resumeFile, fileName, publicUrl);
         } else {
-          console.error('Resume upload error:', uploadError);
+          console.error('❌ Resume upload error:', uploadError);
           // Continue with application even if resume upload fails
         }
       } catch (uploadError) {
-        console.error('Resume upload error:', uploadError);
+        console.error('❌ Resume upload exception:', uploadError);
         // Continue with application even if resume upload fails
       }
     }
 
+    // Prepare application data
+    const applicationData = {
+      user_id: session.user.id,
+      job_id: jobIdInt, // ✅ Use integer job ID
+      job_title: job.title,
+      company: job.company,
+      status: 'applied', // This should work with your updated constraint
+      applied_at: new Date().toISOString(),
+      cover_letter: coverLetter,
+      resume_file_url: resumeFileUrl,
+      resume_filename: resumeFilename,
+      desired_salary: desiredSalary ? parseInt(desiredSalary) : null,
+      available_start_date: availableStartDate || null,
+      linkedin_url: linkedinUrl,
+      portfolio_url: portfolioUrl,
+      phone: phone
+    };
+
+    console.log('📝 Creating application with data:', {
+      ...applicationData,
+      cover_letter: coverLetter ? `${coverLetter.substring(0, 50)}...` : null
+    });
+
     // Create the application record
     const { data: application, error } = await supabase
       .from('user_job_applications')
-      .insert({
-        user_id: session.user.id,
-        job_id: jobId,
-        job_title: job.title,
-        company: job.company,
-        status: 'applied',
-        applied_at: new Date().toISOString(),
-        cover_letter: coverLetter,
-        resume_file_url: resumeFileUrl,
-        resume_filename: resumeFilename,
-        desired_salary: desiredSalary ? parseInt(desiredSalary) : null,
-        available_start_date: availableStartDate || null,
-        linkedin_url: linkedinUrl,
-        portfolio_url: portfolioUrl,
-        phone: phone
-      })
+      .insert(applicationData)
       .select()
       .single();
 
     if (error) {
-      console.error('Error creating application:', error);
-      return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 });
+      console.error('❌ Error creating application:', error);
+      return NextResponse.json({ 
+        error: 'Failed to submit application',
+        details: error.message,
+        hint: error.hint 
+      }, { status: 500 });
     }
+
+    console.log('✅ Application created successfully:', application.id);
 
     // Send enhanced email notification to employer if email is provided
     if (job.employer_email) {
@@ -132,8 +172,8 @@ export async function POST(req: NextRequest) {
           employerEmail: job.employer_email,
           jobTitle: job.title,
           company: job.company,
-          jobId: jobId,
-          applicationId: application.id,
+          jobId: jobIdInt.toString(),
+          applicationId: application.id.toString(),
           applicantName: session.user.name || session.user.email || 'Anonymous',
           applicantEmail: session.user.email || '',
           coverLetter,
@@ -144,9 +184,9 @@ export async function POST(req: NextRequest) {
           portfolioUrl,
           phone
         });
-        console.log(`Enhanced email sent to employer: ${job.employer_email}`);
+        console.log(`✅ Enhanced email sent to employer: ${job.employer_email}`);
       } catch (emailError) {
-        console.error('Failed to send employer notification:', emailError);
+        console.error('❌ Failed to send employer notification:', emailError);
         // Don't fail the application if email fails
       }
     }
@@ -159,8 +199,9 @@ export async function POST(req: NextRequest) {
         job.title,
         job.company
       );
+      console.log('✅ Confirmation email sent to applicant');
     } catch (confirmationError) {
-      console.error('Failed to send application confirmation:', confirmationError);
+      console.error('❌ Failed to send application confirmation:', confirmationError);
       // Don't fail the application if confirmation email fails
     }
 
@@ -168,7 +209,7 @@ export async function POST(req: NextRequest) {
     try {
       await notificationService.createNotification({
         userId: session.user.id,
-        applicationId: application.id,
+        applicationId: application.id.toString(),
         type: 'status_update',
         title: `Application Submitted - ${job.title}`,
         message: `Your application for ${job.title} at ${job.company} has been successfully submitted.`,
@@ -179,8 +220,9 @@ export async function POST(req: NextRequest) {
           company: job.company
         }
       });
+      console.log('✅ Initial notification created');
     } catch (notificationError) {
-      console.error('Failed to create notification:', notificationError);
+      console.error('❌ Failed to create notification:', notificationError);
       // Don't fail the application if notification creation fails
     }
 
@@ -194,8 +236,11 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error processing application:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('💥 Error processing application:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 
@@ -221,10 +266,8 @@ async function saveToUserResumes(
     const resumeRecord = {
       user_id: userId,
       filename: fileName,
-      original_filename: file.name,
       file_size: file.size,
       file_type: file.type,
-      file_url: publicUrl,
       text_content: text,
       tech_stack: [], // Could extract tech stack here
       ats_score: 75, // Default score
@@ -248,9 +291,9 @@ async function saveToUserResumes(
         });
     }
 
-    console.log('Resume saved to user_resumes table');
+    console.log('✅ Resume saved to user_resumes table');
   } catch (error) {
-    console.error('Error saving to user_resumes:', error);
+    console.error('❌ Error saving to user_resumes:', error);
     // Don't fail the application if this fails
   }
 }
