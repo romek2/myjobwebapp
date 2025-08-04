@@ -15,6 +15,7 @@ interface ApplicationModalProps {
   onSuccess: () => void;
 }
 
+
 export default function ApplicationModal({ job, onClose, onSuccess }: ApplicationModalProps) {
   const { data: session } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
