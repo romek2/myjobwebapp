@@ -4,17 +4,21 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const notificationId = params.id;
+    // Extract notification ID from URL pathname (matching your pattern)
+    const pathname = request.nextUrl.pathname;
+    const notificationId = pathname.split('/')[3]; // /api/notifications/[id]/read
+
+    if (!notificationId) {
+      return NextResponse.json({ error: 'Notification ID is required' }, { status: 400 });
+    }
+
     const supabase = createServerSupabase();
 
     // Update notification as read in user_notifications table
