@@ -2,37 +2,53 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { notificationService } from '@/lib/services/notificationService';
+import { createServerSupabase } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user has PRO access
-    const isPro = session.user.subscriptionStatus === 'PRO';
+    const supabase = createServerSupabase();
 
-    // Get user's notifications with PRO filtering
-    const notifications = await notificationService.getUserNotifications(
-      session.user.id, 
-      isPro
-    );
+    // Get user's subscription status
+    const { data: user } = await supabase
+      .from('User')
+      .select('subscriptionStatus')
+      .eq('id', session.user.id)
+      .single();
 
-    return NextResponse.json({ 
-      notifications,
+    const isPro = user?.subscriptionStatus === 'PRO';
+
+    // Get notifications for the user from user_notifications table
+    const { data: notifications, error } = await supabase
+      .from('user_notifications')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error('Error fetching notifications:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch notifications' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      notifications: notifications || [],
       isPro,
-      count: notifications.length,
-      unreadCount: notifications.filter(n => !n.is_read).length
+      count: notifications?.length || 0
     });
 
   } catch (error) {
-    console.error('Error fetching notifications:', error);
+    console.error('Error in notifications API:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch notifications' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
-
