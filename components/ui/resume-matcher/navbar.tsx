@@ -58,11 +58,11 @@ const Navbar = () => {
                   href={href} 
                   className="relative px-4 py-2 transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 focus:outline-none focus:ring-0 focus:border-none outline-none group"
                 >
-                  <div className="flex items-center space-x-2 text-gray-700 group-hover:text-blue-600 transition-colors duration-300">
+                  <div className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors duration-300">
                     <Icon className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
                     <span className="font-medium">{label}</span>
                   </div>
-                  <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 rounded-full opacity-0 group-hover:opacity-100"></div>
+                  <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 rounded-full"></div>
                 </Link>
               ))}
             </div>
@@ -159,18 +159,7 @@ const Navbar = () => {
                 </div>
               </div>
               
-              {/* Quick Actions */}
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-4">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Quick Actions</h3>
-                <div className="flex space-x-2">
-                  <button className="flex-1 bg-white text-blue-600 py-2 px-3 rounded-xl text-sm font-medium hover:bg-blue-50 transition-colors duration-300">
-                    Search Jobs
-                  </button>
-                  <button className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white py-2 px-3 rounded-xl text-sm font-medium hover:shadow-lg transition-all duration-300">
-                    Upload Resume
-                  </button>
-                </div>
-              </div>
+             
             </div>
           </div>
         </div>
