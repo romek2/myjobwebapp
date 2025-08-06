@@ -159,18 +159,7 @@ const Navbar = () => {
                 </div>
               </div>
               
-              {/* Quick Actions */}
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-4">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Quick Actions</h3>
-                <div className="flex space-x-2">
-                  <button className="flex-1 bg-white text-blue-600 py-2 px-3 rounded-xl text-sm font-medium hover:bg-blue-50 transition-colors duration-300">
-                    Search Jobs
-                  </button>
-                  <button className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white py-2 px-3 rounded-xl text-sm font-medium hover:shadow-lg transition-all duration-300">
-                    Upload Resume
-                  </button>
-                </div>
-              </div>
+             
             </div>
           </div>
         </div>

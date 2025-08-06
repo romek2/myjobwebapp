@@ -49,7 +49,7 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
  }
 
  return (
-   <div className="space-y-4">
+   <div className="space-y-4 relative">
      <h2 className="text-xl font-semibold mb-4">Found Jobs ({jobs.length})</h2>
      
      {jobs.map((job) => (
