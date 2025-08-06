@@ -56,7 +56,7 @@ const Navbar = () => {
                 <Link 
                   key={href}
                   href={href} 
-                  className="relative group px-4 py-2 rounded-full transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50"
+                  className="relative group px-4 py-2 transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 focus:outline-none"
                 >
                   <div className="flex items-center space-x-2 text-gray-700 group-hover:text-blue-600 transition-colors duration-300">
                     <Icon className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />

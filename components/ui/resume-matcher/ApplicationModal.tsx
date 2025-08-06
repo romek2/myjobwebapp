@@ -1,4 +1,4 @@
-// components/ui/resume-matcher/ApplicationModal.tsx
+// components/ui/resume-matcher/ApplicationModal.tsx - Original with Glassmorphism Buttons
 'use client';
 
 import React, { useState } from 'react';
@@ -14,7 +14,6 @@ interface ApplicationModalProps {
   onClose: () => void;
   onSuccess: () => void;
 }
-
 
 export default function ApplicationModal({ job, onClose, onSuccess }: ApplicationModalProps) {
   const { data: session } = useSession();
@@ -81,8 +80,8 @@ export default function ApplicationModal({ job, onClose, onSuccess }: Applicatio
 
   if (success) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <Card className="w-full max-w-md">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <Card className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-white/20 shadow-2xl shadow-black/10">
           <CardContent className="p-6 text-center">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Application Submitted!</h3>
@@ -99,22 +98,26 @@ export default function ApplicationModal({ job, onClose, onSuccess }: Applicatio
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white/90 backdrop-blur-xl border border-white/20 shadow-2xl shadow-black/10">
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
               <CardTitle>Apply to {job.title}</CardTitle>
               <p className="text-gray-600">{job.company} • {job.location}</p>
             </div>
-            <Button variant="ghost" onClick={onClose} className="p-2">
+            <Button 
+              variant="ghost" 
+              onClick={onClose} 
+              className="p-2 hover:bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl transition-all duration-300 hover:scale-110"
+            >
               <X className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           {error && (
-            <Alert variant="destructive" className="mb-4">
+            <Alert variant="destructive" className="mb-4 bg-red-50/50 backdrop-blur-sm border border-red-200">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
@@ -130,7 +133,7 @@ export default function ApplicationModal({ job, onClose, onSuccess }: Applicatio
                 value={formData.coverLetter}
                 onChange={(e) => setFormData({...formData, coverLetter: e.target.value})}
                 rows={5}
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/60 backdrop-blur-sm"
                 placeholder="Tell us why you're interested in this position..."
                 required
               />
@@ -146,7 +149,7 @@ export default function ApplicationModal({ job, onClose, onSuccess }: Applicatio
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/60 backdrop-blur-sm"
                   placeholder="+1 (555) 123-4567"
                 />
               </div>
@@ -159,7 +162,7 @@ export default function ApplicationModal({ job, onClose, onSuccess }: Applicatio
                   type="number"
                   value={formData.desiredSalary}
                   onChange={(e) => setFormData({...formData, desiredSalary: e.target.value})}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/60 backdrop-blur-sm"
                   placeholder="80000"
                 />
               </div>
@@ -175,7 +178,7 @@ export default function ApplicationModal({ job, onClose, onSuccess }: Applicatio
                   type="date"
                   value={formData.availableStartDate}
                   onChange={(e) => setFormData({...formData, availableStartDate: e.target.value})}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/60 backdrop-blur-sm"
                 />
               </div>
               
@@ -187,7 +190,7 @@ export default function ApplicationModal({ job, onClose, onSuccess }: Applicatio
                   type="url"
                   value={formData.linkedinUrl}
                   onChange={(e) => setFormData({...formData, linkedinUrl: e.target.value})}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/60 backdrop-blur-sm"
                   placeholder="https://linkedin.com/in/yourprofile"
                 />
               </div>
@@ -202,7 +205,7 @@ export default function ApplicationModal({ job, onClose, onSuccess }: Applicatio
                 type="url"
                 value={formData.portfolioUrl}
                 onChange={(e) => setFormData({...formData, portfolioUrl: e.target.value})}
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/60 backdrop-blur-sm"
                 placeholder="https://yourportfolio.com"
               />
             </div>
@@ -212,7 +215,7 @@ export default function ApplicationModal({ job, onClose, onSuccess }: Applicatio
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Resume (Optional)
               </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-white/30 backdrop-blur-sm">
                 <input
                   type="file"
                   accept=".pdf,.doc,.docx"
@@ -238,14 +241,14 @@ export default function ApplicationModal({ job, onClose, onSuccess }: Applicatio
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="flex-1"
+                className="flex-1 bg-white/70 backdrop-blur-sm border border-white/30 hover:bg-white/90 transition-all duration-300"
                 disabled={isSubmitting}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg transition-all duration-300 hover:scale-105"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Submitting...' : 'Submit Application'}
