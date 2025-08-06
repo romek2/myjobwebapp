@@ -6,7 +6,7 @@ import { useProAccess } from '@/lib/subscription';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bell, Plus, AlertCircle, PauseCircle, PlayCircle, Trash2 } from 'lucide-react';
+import { Bell, Plus, AlertCircle, PauseCircle, PlayCircle, Trash2, Sparkles, Zap, TrendingUp, Users, Crown, Star, ArrowRight, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Alert {
@@ -164,14 +164,37 @@ export default function JobAlertsPage() {
 
   if (!session) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="text-center py-12">
-          <Bell className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-          <h1 className="text-2xl font-bold mb-4">Sign in to manage job alerts</h1>
-          <p className="mb-6 text-gray-600">Create personalized job alerts to get notified about new opportunities.</p>
-          <Link href="/api/auth/signin" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg">
-            Sign In
-          </Link>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 relative overflow-hidden">
+        {/* Background decorations */}
+        <div className="absolute top-20 right-10 w-72 h-72 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl animate-blob"></div>
+        <div className="absolute bottom-20 left-10 w-72 h-72 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
+
+        <div className="relative max-w-4xl mx-auto p-6">
+          <div className="text-center py-20">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-8 shadow-2xl">
+              <Bell className="h-10 w-10 text-white animate-pulse" />
+            </div>
+            
+            <h1 className="text-4xl sm:text-5xl font-bold mb-6 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
+              Smart Job Alerts
+            </h1>
+            
+            <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
+              Get notified instantly when dream jobs matching your skills become available. 
+              Never miss out on the perfect opportunity again.
+            </p>
+            
+            <div className="inline-flex items-center space-x-4">
+              <Link 
+                href="/api/auth/signin" 
+                className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-2xl hover:shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 hover:scale-105"
+              >
+                <Users className="w-5 h-5 mr-2" />
+                Sign In to Continue
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -180,266 +203,392 @@ export default function JobAlertsPage() {
   // PRO Feature upgrade prompt
   if (!isPro) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">Job Alerts</h1>
-        
-        <Card className="border border-gray-200 shadow-sm mb-6">
-          <CardContent className="p-8 text-center">
-            <div className="mb-4">
-              <span className="inline-block p-3 rounded-full bg-yellow-100 text-yellow-800 mb-4">
-                <Bell className="h-6 w-6" />
-              </span>
-              <h2 className="text-2xl font-bold mb-2">Premium Job Alerts</h2>
-              <p className="text-gray-600 mb-6">
-                Upgrade to PRO to receive personalized job alerts for premium opportunities.
-              </p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 relative overflow-hidden">
+        {/* Background decorations */}
+        <div className="absolute top-20 right-10 w-72 h-72 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl animate-blob"></div>
+        <div className="absolute bottom-20 left-10 w-72 h-72 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
+
+        <div className="relative max-w-5xl mx-auto p-6">
+          {/* Header */}
+          <div className="text-center mb-12 pt-8">
+            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-yellow-100 to-orange-100 border border-yellow-200 rounded-full text-yellow-800 text-sm font-medium mb-6">
+              <Crown className="w-4 h-4 mr-2" />
+              Premium Feature
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-bold mb-4 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
+              Job Alerts
+            </h1>
+          </div>
+
+          {/* Main upgrade card */}
+          <div className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl shadow-black/10 overflow-hidden mb-8">
+            <div className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 p-8 text-white">
+              {/* Background pattern */}
+              <div className="absolute inset-0 opacity-30">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10"></div>
+                <div className="absolute top-10 left-10 w-20 h-20 bg-white/5 rounded-full"></div>
+                <div className="absolute top-32 right-20 w-16 h-16 bg-white/5 rounded-full"></div>
+                <div className="absolute bottom-20 left-1/3 w-12 h-12 bg-white/5 rounded-full"></div>
+                <div className="absolute bottom-40 right-10 w-8 h-8 bg-white/5 rounded-full"></div>
+              </div>
+              
+              <div className="relative text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl mb-6">
+                  <Bell className="h-8 w-8 text-white animate-pulse" />
+                </div>
+                <h2 className="text-3xl font-bold mb-4">Premium Job Alerts</h2>
+                <p className="text-blue-100 text-lg mb-8 max-w-2xl mx-auto">
+                  Upgrade to PRO to receive instant notifications for premium opportunities that match your exact criteria.
+                </p>
+              </div>
             </div>
             
-            <div className="bg-gray-50 p-6 rounded-lg mb-6">
-              <h3 className="font-semibold mb-4">With PRO job alerts, you'll get:</h3>
-              <ul className="text-left space-y-3 mb-6">
-                <li className="flex items-start">
-                  <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Early access to premium job listings
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Custom alert frequencies (daily, weekly, real-time)
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Salary range filters and company type preferences
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-5 w-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Advanced keyword and technology matching
-                </li>
-              </ul>
+            <div className="p-8">
+              <div className="grid md:grid-cols-2 gap-8 mb-8">
+                {/* Features */}
+                <div>
+                  <h3 className="text-xl font-bold mb-6 flex items-center">
+                    <Sparkles className="w-6 h-6 mr-2 text-purple-500" />
+                    Premium Features
+                  </h3>
+                  <div className="space-y-4">
+                    {[
+                      { icon: Zap, title: 'Real-time Notifications', desc: 'Get alerted within minutes of new job postings' },
+                      { icon: TrendingUp, title: 'Smart Matching', desc: 'AI-powered job matching based on your profile' },
+                      { icon: Star, title: 'Exclusive Access', desc: 'Early access to premium and hidden job listings' },
+                      { icon: Crown, title: 'Priority Support', desc: 'Custom alert frequencies and advanced filters' }
+                    ].map(({ icon: Icon, title, desc }) => (
+                      <div key={title} className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Icon className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{title}</h4>
+                          <p className="text-gray-600 text-sm">{desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Benefits */}
+                <div>
+                  <h3 className="text-xl font-bold mb-6 flex items-center">
+                    <CheckCircle className="w-6 h-6 mr-2 text-green-500" />
+                    What You'll Get
+                  </h3>
+                  <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-2xl p-6">
+                    <ul className="space-y-3">
+                      {[
+                        'Up to 10 custom job alerts',
+                        'Daily, weekly, or real-time notifications',
+                        'Salary range and location filters',
+                        'Company type and size preferences',
+                        'Advanced keyword matching',
+                        'Mobile push notifications',
+                        'Email digest summaries',
+                        'Priority customer support'
+                      ].map((feature) => (
+                        <li key={feature} className="flex items-center text-gray-700">
+                          <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                            <CheckCircle className="w-3 h-3 text-green-600" />
+                          </div>
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="text-center">
+                <Link 
+                  href="/pricing" 
+                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-2xl hover:shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 hover:scale-105"
+                >
+                  <Crown className="w-5 h-5 mr-2" />
+                  Upgrade to PRO
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Link>
+                <p className="text-gray-500 text-sm mt-4">Cancel anytime • 30-day money back guarantee</p>
+              </div>
             </div>
-            
-            <Link href="/pricing" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg inline-block">
-              Upgrade to PRO
-            </Link>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Job Alerts</h1>
-        <Button 
-          onClick={() => setShowNewAlertForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          <Plus className="mr-2 h-4 w-4" /> Create New Alert
-        </Button>
-      </div>
-      
-      {/* PRO badge */}
-      <div className="mb-6 inline-flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-        <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-        </svg>
-        PRO Feature Enabled
-      </div>
-      
-      {/* Error message */}
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      
-      {showNewAlertForm && (
-        <Card className="mb-6 border-blue-200 shadow-sm">
-          <CardHeader>
-            <CardTitle>Create New Alert</CardTitle>
-            <CardDescription>
-              Set up alerts for jobs matching your preferred criteria
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={addNewAlert}>
-              <div className="space-y-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 relative overflow-hidden">
+      {/* Background decorations */}
+      <div className="absolute top-20 right-10 w-72 h-72 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl animate-blob"></div>
+      <div className="absolute bottom-20 left-10 w-72 h-72 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
+
+      <div className="relative max-w-5xl mx-auto p-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pt-8">
+          <div>
+            <div className="inline-flex items-center px-3 py-1 bg-gradient-to-r from-green-100 to-emerald-100 border border-green-200 rounded-full text-green-800 text-xs font-medium mb-4">
+              <Crown className="w-3 h-3 mr-1" />
+              PRO Feature Active
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent mb-2">
+              Job Alerts
+            </h1>
+            <p className="text-gray-600">Manage your personalized job notifications</p>
+          </div>
+          <Button 
+            onClick={() => setShowNewAlertForm(true)}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg transition-all duration-300 hover:scale-105 mt-4 sm:mt-0"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Create New Alert
+          </Button>
+        </div>
+        
+        {/* Error message */}
+        {error && (
+          <Alert variant="destructive" className="mb-6 bg-red-50/50 backdrop-blur-sm border border-red-200">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        {/* New Alert Form */}
+        {showNewAlertForm && (
+          <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/20 shadow-xl shadow-black/5 mb-8">
+            <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 rounded-t-2xl text-white">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                  <Plus className="w-4 h-4" />
+                </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="name">
-                    Alert Name
-                  </label>
-                  <input
-                    id="name"
-                    type="text"
-                    value={newAlert.name}
-                    onChange={(e) => setNewAlert({...newAlert, name: e.target.value})}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="E.g., Senior React Developer"
-                    required
-                  />
+                  <h3 className="text-xl font-semibold">Create New Alert</h3>
+                  <p className="text-blue-100 text-sm">Set up alerts for jobs matching your criteria</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              <form onSubmit={addNewAlert}>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="name">
+                        Alert Name
+                      </label>
+                      <input
+                        id="name"
+                        type="text"
+                        value={newAlert.name}
+                        onChange={(e) => setNewAlert({...newAlert, name: e.target.value})}
+                        className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/50 backdrop-blur-sm"
+                        placeholder="E.g., Senior React Developer"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="keywords">
+                        Keywords (comma separated)
+                      </label>
+                      <input
+                        id="keywords"
+                        type="text"
+                        value={newAlert.keywords}
+                        onChange={(e) => setNewAlert({...newAlert, keywords: e.target.value})}
+                        className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/50 backdrop-blur-sm"
+                        placeholder="E.g., React, TypeScript, Remote"
+                        required
+                      />
+                      <p className="mt-2 text-sm text-gray-500">
+                        Enter keywords related to job titles, skills, or locations
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="frequency">
+                        Alert Frequency
+                      </label>
+                      <select
+                        id="frequency"
+                        value={newAlert.frequency}
+                        onChange={(e) => setNewAlert({...newAlert, frequency: e.target.value})}
+                        className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white/50 backdrop-blur-sm"
+                        required
+                      >
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="realtime">Real-time</option>
+                      </select>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4">
+                      <h4 className="font-semibold text-gray-800 mb-2">Pro Tip</h4>
+                      <p className="text-sm text-gray-600">Use specific keywords to get more relevant matches. Real-time alerts notify you within minutes!</p>
+                    </div>
+                  </div>
                 </div>
                 
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="keywords">
-                    Keywords (comma separated)
-                  </label>
-                  <input
-                    id="keywords"
-                    type="text"
-                    value={newAlert.keywords}
-                    onChange={(e) => setNewAlert({...newAlert, keywords: e.target.value})}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="E.g., React, TypeScript, Remote"
-                    required
-                  />
-                  <p className="mt-1 text-sm text-gray-500">
-                    Enter keywords related to job titles, skills, or locations
-                  </p>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="frequency">
-                    Alert Frequency
-                  </label>
-                  <select
-                    id="frequency"
-                    value={newAlert.frequency}
-                    onChange={(e) => setNewAlert({...newAlert, frequency: e.target.value})}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="realtime">Real-time</option>
-                  </select>
-                </div>
-                
-                <div className="flex justify-end space-x-2 pt-2">
+                <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 mt-6">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setShowNewAlertForm(false)}
+                    className="hover:bg-gray-50"
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg transition-all duration-300 hover:scale-105"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? 'Creating...' : 'Create Alert'}
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Bell className="w-4 h-4 mr-2" />
+                        Create Alert
+                      </>
+                    )}
                   </Button>
                 </div>
+              </form>
+            </div>
+          </div>
+        )}
+        
+        {/* Loading or Alerts List */}
+        {isLoading ? (
+          <div className="text-center py-20">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
+            <p className="text-gray-600 text-lg">Loading your alerts...</p>
+          </div>
+        ) : alerts.length === 0 ? (
+          <div className="bg-white/60 backdrop-blur-xl rounded-2xl border border-white/20 shadow-xl shadow-black/5">
+            <div className="text-center p-12">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl mb-6">
+                <Bell className="h-10 w-10 text-gray-400" />
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-      
-      {isLoading ? (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-          <p className="mt-2 text-gray-600">Loading your alerts...</p>
-        </div>
-      ) : alerts.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <Bell className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium mb-2">No alerts yet</h3>
-            <p className="text-gray-600 mb-4">
-              You don't have any job alerts set up. Create your first alert to get notified about relevant opportunities.
-            </p>
-            <Button 
-              onClick={() => setShowNewAlertForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Plus className="mr-2 h-4 w-4" /> Create Your First Alert
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Your Alerts</h2>
-          <div className="space-y-4">
-            {alerts.map((alert) => (
-              <Card key={alert.id} className={`border-l-4 ${alert.active ? 'border-l-green-500' : 'border-l-gray-300'}`}>
-                <CardContent className="p-5">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-semibold text-lg">{alert.name}</h3>
-                      <div className="mt-1 space-y-2">
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">Keywords:</span> {alert.keywords}
-                        </p>
-                        <div className="flex items-center space-x-4 text-sm">
-                          <span className={`capitalize px-2 py-0.5 rounded-full ${
-                            alert.frequency === 'realtime' 
-                              ? 'bg-blue-100 text-blue-800' 
-                              : alert.frequency === 'daily'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-purple-100 text-purple-800'
-                          }`}>
-                            {alert.frequency}
-                          </span>
-                          <span className={`px-2 py-0.5 rounded-full ${
-                            alert.active 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {alert.active ? 'Active' : 'Paused'}
-                          </span>
+              <h3 className="text-2xl font-semibold mb-4 text-gray-900">No alerts yet</h3>
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                You don't have any job alerts set up. Create your first alert to get notified about relevant opportunities.
+              </p>
+              <Button 
+                onClick={() => setShowNewAlertForm(true)}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg transition-all duration-300 hover:scale-105"
+              >
+                <Plus className="mr-2 h-4 w-4" /> Create Your First Alert
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <h2 className="text-2xl font-semibold mb-6 text-gray-900">Your Active Alerts</h2>
+            <div className="grid gap-6">
+              {alerts.map((alert) => (
+                <div key={alert.id} className={`bg-white/60 backdrop-blur-xl rounded-2xl border border-white/20 shadow-xl shadow-black/5 overflow-hidden transition-all duration-300 hover:shadow-2xl ${alert.active ? 'border-l-4 border-l-green-400' : 'border-l-4 border-l-gray-300'}`}>
+                  <div className="p-6">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${alert.active ? 'bg-gradient-to-br from-green-400 to-emerald-500' : 'bg-gray-200'}`}>
+                            <Bell className={`w-5 h-5 ${alert.active ? 'text-white' : 'text-gray-500'}`} />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-xl text-gray-900">{alert.name}</h3>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                                alert.active 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {alert.active ? 'Active' : 'Paused'}
+                              </span>
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
+                                alert.frequency === 'realtime' 
+                                  ? 'bg-red-100 text-red-800' 
+                                  : alert.frequency === 'daily'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-purple-100 text-purple-800'
+                              }`}>
+                                {alert.frequency}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-gray-50 rounded-xl p-4">
+                          <p className="text-sm font-medium text-gray-700 mb-1">Keywords:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {alert.keywords.split(',').map((keyword, index) => (
+                              <span key={index} className="inline-flex items-center px-2.5 py-1 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-600">
+                                {keyword.trim()}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => toggleAlert(alert.id)}
-                        title={alert.active ? "Pause alert" : "Activate alert"}
-                      >
-                        {alert.active ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => deleteAlert(alert.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        title="Delete alert"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      
+                      <div className="flex space-x-2 ml-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleAlert(alert.id)}
+                          className={`hover:scale-105 transition-all duration-200 ${
+                            alert.active 
+                              ? 'hover:bg-orange-50 hover:border-orange-200' 
+                              : 'hover:bg-green-50 hover:border-green-200'
+                          }`}
+                          title={alert.active ? "Pause alert" : "Activate alert"}
+                        >
+                          {alert.active ? 
+                            <PauseCircle className="h-4 w-4 text-orange-600" /> : 
+                            <PlayCircle className="h-4 w-4 text-green-600" />
+                          }
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteAlert(alert.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-200 hover:scale-105 transition-all duration-200"
+                          title="Delete alert"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Info Section */}
+        <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl border border-blue-100 p-6 mt-8">
+          <div className="flex items-start space-x-4">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-blue-900 mb-2">About Premium Job Alerts</h3>
+              <p className="text-gray-700 mb-2">
+                As a PRO subscriber, you'll receive priority notifications for premium job listings that match your alert criteria.
+                Our AI system learns from your preferences to deliver increasingly relevant opportunities.
+              </p>
+              <p className="text-gray-700">
+                You can create up to 10 custom alerts with different criteria and notification frequencies. 
+                Real-time alerts notify you within minutes of new postings!
+              </p>
+            </div>
           </div>
         </div>
-      )}
-      
-      <Card className="mt-8 bg-blue-50 border-blue-100">
-        <CardContent className="p-6">
-          <h3 className="font-medium text-blue-800 mb-2">About Premium Job Alerts</h3>
-          <p className="text-gray-700 mb-2">
-            As a PRO subscriber, you'll receive notifications for premium job listings that match your alert criteria.
-            Our system prioritizes high-quality opportunities and exclusive positions not available to free users.
-          </p>
-          <p className="text-gray-700">
-            You can create up to 3 custom alerts with different criteria and notification frequencies.
-          </p>
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }

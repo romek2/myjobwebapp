@@ -98,10 +98,6 @@ const Navbar = () => {
           {/* Desktop CTA Section */}
           <div className="hidden md:flex items-center space-x-4">
             <div className="relative">
-              <Search className="w-5 h-5 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors duration-300 hover:scale-110" />
-            </div>
-            <div className="w-px h-6 bg-gray-200"></div>
-            <div className="relative">
               <LoginButton />
               {/* Floating notification dot */}
               <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
