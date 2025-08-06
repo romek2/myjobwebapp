@@ -3,7 +3,15 @@ import React, { useState } from 'react';
 import { Job } from '@/types/job';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, ExternalLink, Send } from 'lucide-react';
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  ExternalLink, 
+  Send, 
+  Building, 
+  MapPin, 
+  DollarSign 
+} from 'lucide-react';
 import ApplicationModal from './ApplicationModal';
 
 interface MatchingJobsProps {
@@ -61,15 +69,18 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
                  <h3 className="font-semibold text-lg">{job.title}</h3>
                </div>
                <div className="mt-1 space-y-2">
-                 <p className="text-sm text-gray-600">
-                   <span className="font-medium">Company:</span> {job.company}
+                 <p className="text-sm text-gray-600 flex items-center">
+                   <Building className="h-4 w-4 mr-2 text-blue-500" />
+                   <span className="font-medium">Company:</span> <span className="ml-1">{job.company}</span>
                  </p>
-                 <p className="text-sm text-gray-600">
-                   <span className="font-medium">Location:</span> {job.location}
+                 <p className="text-sm text-gray-600 flex items-center">
+                   <MapPin className="h-4 w-4 mr-2 text-green-500" />
+                   <span className="font-medium">Location:</span> <span className="ml-1">{job.location}</span>
                  </p>
                  {job.salary && (
-                   <p className="text-sm text-gray-600">
-                     <span className="font-medium">Salary:</span> {job.salary}
+                   <p className="text-sm text-gray-600 flex items-center">
+                     <DollarSign className="h-4 w-4 mr-2 text-green-600" />
+                     <span className="font-medium">Salary:</span> <span className="ml-1 font-semibold text-green-800">{job.salary}</span>
                    </p>
                  )}
                  <div className="flex items-center space-x-4 text-sm">
