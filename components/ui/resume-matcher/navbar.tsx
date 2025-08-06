@@ -34,7 +34,7 @@ const Navbar = () => {
           
           {/* Logo Section with Animation */}
           <div className="flex items-center group">
-            <Link href="/" className="flex items-center space-x-2 group-hover:scale-105 transition-transform duration-300">
+            <Link href="/" className="flex items-center space-x-2 ">
               <div className="relative">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300">
                   <Zap className="w-4 h-4 text-white group-hover:rotate-12 transition-transform duration-300" />
@@ -62,7 +62,7 @@ const Navbar = () => {
                     <Icon className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
                     <span className="font-medium">{label}</span>
                   </div>
-                  <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 rounded-full"></div>
+                  
                 </Link>
               ))}
             </div>
