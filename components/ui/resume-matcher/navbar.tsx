@@ -46,7 +46,7 @@ const Navbar = () => {
               </span>
             </Link>
             
-            {/* Desktop navigation with cool hover effects */}
+            {/* Desktop navigation with individual hover effects */}
             <div className="hidden md:flex ml-12 space-x-1">
               {[
                 { href: '/profile', label: 'Profile', icon: User },
@@ -56,13 +56,13 @@ const Navbar = () => {
                 <Link 
                   key={href}
                   href={href} 
-                  className="relative group px-4 py-2 transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 focus:outline-none focus:ring-0 focus:border-none outline-none"
+                  className="relative px-4 py-2 transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 focus:outline-none focus:ring-0 focus:border-none outline-none group"
                 >
                   <div className="flex items-center space-x-2 text-gray-700 group-hover:text-blue-600 transition-colors duration-300">
                     <Icon className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
                     <span className="font-medium">{label}</span>
                   </div>
-                  <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 rounded-full"></div>
+                  <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 rounded-full opacity-0 group-hover:opacity-100"></div>
                 </Link>
               ))}
             </div>
