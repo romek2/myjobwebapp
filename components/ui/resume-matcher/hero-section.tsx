@@ -28,9 +28,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
 
   return (
     <div className="relative bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 overflow-hidden">
+      
       {/* Animated background patterns */}
-      <div>
-      <div className="absolute inset-0 opacity-40" style={{
+        <div className="absolute inset-0 opacity-40" style={{
   backgroundImage: `url("data:image/svg+xml,<svg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'><g fill='none' fill-rule='evenodd'><g fill='white' fill-opacity='0.1'><circle cx='7' cy='7' r='7'/><circle cx='53' cy='7' r='7'/><circle cx='7' cy='53' r='7'/><circle cx='53' cy='53' r='7'/></g></g></svg>")`
 }}></div>
       
@@ -40,16 +40,16 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
       <div className="absolute bottom-20 left-20 w-12 h-12 bg-gradient-to-br from-yellow-400/30 to-orange-500/30 rounded-lg rotate-45 animate-ping"></div>
       <div className="absolute bottom-32 right-16 w-8 h-8 bg-gradient-to-br from-green-400/30 to-emerald-500/30 rounded-full animate-pulse"></div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-32">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-22">
         <div className="text-center">
           {/* Premium badge */}
-          <div className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-blue-200 text-sm font-medium mb-8 border border-white/20">
+          <div className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-blue-200 text-sm font-medium mb-6 border border-white/20">
             <Sparkles className="w-4 h-4 mr-2 animate-pulse" />
             AI-Powered Job Matching
           </div>
 
           {/* Main heading with gradient text */}
-          <h1 className="text-4xl font-extrabold text-white sm:text-6xl md:text-7xl leading-tight">
+          <h1 className="text-3xl font-extrabold text-white sm:text-5xl md:text-6xl leading-tight">
             Find Your Perfect{' '}
             <span className="relative inline-block">
               <span className="bg-gradient-to-r from-cyan-400 via-blue-300 to-purple-300 bg-clip-text text-transparent">
@@ -60,29 +60,29 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
             </span>
           </h1>
           
-          <p className="mt-6 max-w-3xl mx-auto text-xl text-blue-100 leading-relaxed">
+          <p className="mt-5 max-w-3xl mx-auto text-lg text-blue-100 leading-relaxed">
             Discover opportunities matched to your skills with our AI-powered platform. 
             Join thousands of developers who found their dream positions through our curated job listings.
           </p>
           
           {/* Enhanced search bar */}
-          <div className="mt-12 max-w-2xl mx-auto">
+          <div className="mt-8 max-w-2xl mx-auto">
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-500"></div>
               <div className="relative flex items-center bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-3 border border-white/20">
                 <div className="flex-shrink-0 pl-3">
-                  <Search className="w-6 h-6 text-gray-400 group-hover:text-blue-500 transition-colors duration-300" />
+                  <Search className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors duration-300" />
                 </div>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search jobs, skills, companies, or locations..."
-                  className="flex-1 ml-4 outline-none text-gray-800 text-lg placeholder-gray-500 bg-transparent"
+                  className="flex-1 ml-4 outline-none text-gray-800 text-base placeholder-gray-500 bg-transparent"
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 />
                 <Button 
-                  className="ml-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105" 
+                  className="ml-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105" 
                   onClick={handleSearch}
                 >
                   Search
@@ -92,17 +92,17 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
           </div>
 
           {/* Popular searches with icons and colors */}
-          <div className="mt-8">
-            <p className="text-blue-200 text-sm mb-4 font-medium">Popular Searches:</p>
-            <div className="flex flex-wrap justify-center gap-3">
+          <div className="mt-6">
+            <p className="text-blue-200 text-sm mb-3 font-medium">Popular Searches:</p>
+            <div className="flex flex-wrap justify-center gap-2">
               {popularSearches.map(({ query, icon: Icon, color }, index) => (
                 <button
                   key={query}
                   onClick={() => handleQuickSearch(query)}
-                  className={`group inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm text-white text-sm font-medium rounded-xl hover:bg-white/20 transition-all duration-300 hover:scale-105 border border-white/20 hover:shadow-lg`}
+                  className={`group inline-flex items-center px-3 py-2 bg-white/10 backdrop-blur-sm text-white text-sm font-medium rounded-xl hover:bg-white/20 transition-all duration-300 hover:scale-105 border border-white/20 hover:shadow-lg`}
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <div className={`w-5 h-5 mr-2 bg-gradient-to-br ${color} rounded p-0.5`}>
+                  <div className={`w-4 h-4 mr-2 bg-gradient-to-br ${color} rounded p-0.5`}>
                     <Icon className="w-full h-full text-white" />
                   </div>
                   {query}
@@ -112,7 +112,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
           </div>
 
           {/* Stats section */}
-          <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="mt-11 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {[
               { 
                 icon: TrendingUp, 
@@ -135,29 +135,28 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
             ].map(({ icon: Icon, number, label, color }, index) => (
               <div 
                 key={label} 
-                className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105"
+                className="group bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105"
                 style={{ animationDelay: `${index * 200}ms` }}
               >
-                <div className={`inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br ${color} rounded-xl mb-4 group-hover:rotate-12 transition-transform duration-300`}>
-                  <Icon className="w-6 h-6 text-white" />
+                <div className={`inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br ${color} rounded-xl mb-3 group-hover:rotate-12 transition-transform duration-300`}>
+                  <Icon className="w-5 h-5 text-white" />
                 </div>
-                <div className="text-3xl font-bold text-white mb-1">{number}</div>
+                <div className="text-2xl font-bold text-white mb-1">{number}</div>
                 <div className="text-blue-200 text-sm font-medium">{label}</div>
               </div>
             ))}
           </div>
 
           {/* CTA Section */}
-          <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center items-center max-w-md mx-auto">
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto">
             <div className="text-blue-200 text-sm">
               Ready to get started?
             </div>
-            <button className="inline-flex items-center px-6 py-3 bg-white text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-all duration-300 hover:scale-105 shadow-lg">
+            <button className="inline-flex items-center px-5 py-2.5 bg-white text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-all duration-300 hover:scale-105 shadow-lg">
               Create Free Account
               <Sparkles className="w-4 h-4 ml-2" />
             </button>
           </div>
-        </div>
         </div>
       </div>
     </div>

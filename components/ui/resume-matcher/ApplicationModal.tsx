@@ -98,8 +98,8 @@ export default function ApplicationModal({ job, onClose, onSuccess }: Applicatio
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white/90 backdrop-blur-xl border border-white/20 shadow-2xl shadow-black/10">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center pt-8 pb-8 px-4 z-50 overflow-y-auto">
+      <Card className="w-full max-w-2xl bg-white/90 backdrop-blur-xl border border-white/20 shadow-2xl shadow-black/10 my-0">
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
