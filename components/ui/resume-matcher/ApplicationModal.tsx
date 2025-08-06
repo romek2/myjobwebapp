@@ -139,11 +139,11 @@ export default function ApplicationModal({ job, onClose, onSuccess }: Applicatio
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="bg-white/90 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl shadow-black/10 w-full max-w-4xl max-h-[90vh] overflow-hidden animate-scale-in">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+      <div className="bg-white/90 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl shadow-black/10 w-full max-w-4xl my-4 animate-scale-in">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 p-6 text-white">
+        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 p-4 sm:p-6 text-white">
           {/* Background pattern */}
           <div className="absolute inset-0 opacity-20">
             <div className="absolute top-4 right-4 w-16 h-16 bg-white/10 rounded-full"></div>
@@ -151,27 +151,27 @@ export default function ApplicationModal({ job, onClose, onSuccess }: Applicatio
           </div>
 
           <div className="relative flex justify-between items-start">
-            <div>
+            <div className="flex-1 min-w-0">
               <div className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-blue-200 text-sm font-medium mb-3">
                 <Send className="w-4 h-4 mr-2" />
                 Quick Apply
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold mb-2">{job.title}</h2>
-              <div className="flex items-center space-x-4 text-blue-100">
-                <span className="flex items-center">
-                  <Building className="h-4 w-4 mr-2" />
-                  {job.company}
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 break-words">{job.title}</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-blue-100 text-sm">
+                <span className="flex items-center mb-1 sm:mb-0">
+                  <Building className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="break-words">{job.company}</span>
                 </span>
                 <span className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  {job.location}
+                  <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="break-words">{job.location}</span>
                 </span>
               </div>
             </div>
             <Button 
               variant="ghost" 
               onClick={onClose} 
-              className="text-white hover:bg-white/20 p-2 rounded-xl transition-all duration-300 hover:scale-110"
+              className="text-white hover:bg-white/20 p-2 rounded-xl transition-all duration-300 hover:scale-110 ml-2 flex-shrink-0"
             >
               <X className="h-5 w-5" />
             </Button>
@@ -179,16 +179,15 @@ export default function ApplicationModal({ job, onClose, onSuccess }: Applicatio
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(90vh-140px)]">
-          <div className="p-6">
-            {error && (
-              <div className="bg-red-50/50 backdrop-blur-sm border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
-                <div className="flex items-center space-x-2">
-                  <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                  <span>{error}</span>
-                </div>
+        <div className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto">
+          {error && (
+            <div className="bg-red-50/50 backdrop-blur-sm border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <span className="text-sm">{error}</span>
               </div>
-            )}
+            </div>
+          )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Cover Letter */}
@@ -391,6 +390,6 @@ export default function ApplicationModal({ job, onClose, onSuccess }: Applicatio
           </div>
         </div>
       </div>
-    </div>
+    
   );
 }

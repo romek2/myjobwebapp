@@ -101,49 +101,50 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
        {jobs.map((job, index) => (
          <div 
            key={job.id} 
-           className="group bg-white/70 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg shadow-black/5 hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] overflow-hidden"
+           className="group bg-white/70 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg shadow-black/5 hover:shadow-2xl transition-all duration-500 hover:scale-[1.01] overflow-hidden"
            style={{ animationDelay: `${index * 100}ms` }}
          >
            {/* Match Score Banner */}
            {job.match > 0 && (
-             <div className={`px-4 py-2 text-center text-white text-sm font-bold ${
+             <div className={`px-3 py-2 text-center text-white text-xs sm:text-sm font-bold ${
                job.match >= 90 
                  ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
                  : job.match >= 70 
                  ? 'bg-gradient-to-r from-blue-500 to-cyan-600'
                  : 'bg-gradient-to-r from-yellow-500 to-orange-600'
              }`}>
-               <div className="flex items-center justify-center gap-2">
-                 <Star className="h-4 w-4" />
-                 {job.match}% Perfect Match
-                 <Sparkles className="h-4 w-4" />
+               <div className="flex items-center justify-center gap-1 sm:gap-2">
+                 <Star className="h-3 w-3 sm:h-4 sm:w-4" />
+                 <span className="text-xs sm:text-sm">{job.match}% Perfect Match</span>
+                 <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
                </div>
              </div>
            )}
 
-           <div className="p-6">
+           <div className="p-4 sm:p-6">
              <div className="flex justify-between items-start mb-4">
-               <div className="flex-1">
+               <div className="flex-1 min-w-0">
                  <div className="flex items-start justify-between mb-3">
-                   <div>
-                     <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors duration-300">
+                   <div className="flex-1 min-w-0">
+                     <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-300 break-words">
                        {job.title}
                      </h3>
-                     <div className="flex items-center space-x-4 text-sm text-gray-600">
-                       <span className="flex items-center bg-gray-50 px-3 py-1 rounded-lg">
-                         <Building className="h-4 w-4 mr-2 text-blue-500" />
-                         <span className="font-medium">{job.company}</span>
+                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600">
+                       <span className="flex items-center bg-gray-50 px-2 sm:px-3 py-1 rounded-lg">
+                         <Building className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-blue-500 flex-shrink-0" />
+                         <span className="font-medium break-words">{job.company}</span>
                        </span>
                        <span className="flex items-center">
-                         <MapPin className="h-4 w-4 mr-1 text-green-500" />
-                         {job.location}
+                         <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-green-500 flex-shrink-0" />
+                         <span className="break-words">{job.location}</span>
                        </span>
                      </div>
                    </div>
-                   <div className="text-right">
-                     <div className="text-sm text-gray-500 flex items-center">
-                       <Clock className="h-4 w-4 mr-1" />
-                       {new Date(job.postedAt).toLocaleDateString()}
+                   <div className="text-right ml-2 flex-shrink-0">
+                     <div className="text-xs sm:text-sm text-gray-500 flex items-center">
+                       <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                       <span className="hidden sm:inline">{new Date(job.postedAt).toLocaleDateString()}</span>
+                       <span className="sm:hidden">{new Date(job.postedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                      </div>
                    </div>
                  </div>
@@ -152,41 +153,43 @@ const MatchingJobs: React.FC<MatchingJobsProps> = ({
                  <div className="space-y-3">
                    {job.salary && (
                      <div className="flex items-center text-sm">
-                       <div className="flex items-center bg-green-50 px-3 py-1 rounded-lg">
-                         <DollarSign className="h-4 w-4 mr-1 text-green-600" />
-                         <span className="font-bold text-green-800">{job.salary}</span>
+                       <div className="flex items-center bg-green-50 px-2 sm:px-3 py-1 rounded-lg">
+                         <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-green-600" />
+                         <span className="font-bold text-green-800 text-xs sm:text-sm">{job.salary}</span>
                        </div>
                      </div>
                    )}
 
                    {/* Job Description */}
-                   <div className="bg-gray-50/70 rounded-xl p-4">
-                     <p className="text-sm text-gray-700 line-clamp-3 leading-relaxed">
+                   <div className="bg-gray-50/70 rounded-xl p-3 sm:p-4">
+                     <p className="text-xs sm:text-sm text-gray-700 line-clamp-2 sm:line-clamp-3 leading-relaxed">
                        {job.description}
                      </p>
                    </div>
 
-                 
+                  
 
                    {/* Action Buttons */}
-                   <div className="flex gap-3 pt-4">
+                   <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4">
                      <a
                        href={job.url}
                        target="_blank"
                        rel="noopener noreferrer"
-                       className="group/btn flex-1 inline-flex items-center justify-center text-sm bg-white border-2 border-gray-200 text-gray-700 px-4 py-3 rounded-xl hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 hover:shadow-md font-medium"
+                       className="group/btn flex-1 inline-flex items-center justify-center text-xs sm:text-sm bg-white border-2 border-gray-200 text-gray-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 hover:shadow-md font-medium"
                      >
-                       <Eye className="h-4 w-4 mr-2 group-hover/btn:scale-110 transition-transform duration-300" />
-                       View Details
-                       <ExternalLink className="h-3 w-3 ml-2 opacity-50" />
+                       <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 group-hover/btn:scale-110 transition-transform duration-300" />
+                       <span className="hidden sm:inline">View Details</span>
+                       <span className="sm:hidden">View</span>
+                       <ExternalLink className="h-2 w-2 sm:h-3 sm:w-3 ml-1 sm:ml-2 opacity-50" />
                      </a>
                      <button
                        onClick={() => setSelectedJob(job)}
-                       className="group/btn flex-1 inline-flex items-center justify-center text-sm bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-3 rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-105 font-medium"
+                       className="group/btn flex-1 inline-flex items-center justify-center text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-105 font-medium"
                      >
-                       <Send className="h-4 w-4 mr-2 group-hover/btn:translate-x-1 transition-transform duration-300" />
-                       Apply Now
-                       <Zap className="h-3 w-3 ml-2" />
+                       <Send className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 group-hover/btn:translate-x-1 transition-transform duration-300" />
+                       <span className="hidden sm:inline">Apply Now</span>
+                       <span className="sm:hidden">Apply</span>
+                       <Zap className="h-2 w-2 sm:h-3 sm:w-3 ml-1 sm:ml-2" />
                      </button>
                    </div>
                  </div>
