@@ -13,7 +13,7 @@ export default function Footer() {
           {/* Logo and about section */}
           <div className="col-span-1 md:col-span-1">
             <Link href="/" className="text-xl font-bold text-blue-600">
-              JobMatcher
+              Workr
             </Link>
             <p className="mt-4 text-sm text-gray-600">
               Matching tech professionals with their ideal job opportunities through smart resume analysis.
@@ -120,7 +120,7 @@ export default function Footer() {
 
         <div className="mt-12 pt-8 border-t border-gray-200">
           <p className="text-sm text-gray-500 text-center">
-            &copy; {currentYear} JobMatcher. All rights reserved.
+            &copy; {currentYear} Workr. All rights reserved.
           </p>
          
         </div>

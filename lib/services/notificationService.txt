@@ -287,7 +287,7 @@ export class NotificationService {
 
     if (!isPro && ['interview', 'offer', 'rejected'].includes(status)) {
       // Blurred content for free users
-      const text = `Hello ${userName},\n\nYour application for ${jobTitle} at ${company} has been updated.\n\nUpgrade to PRO to see the full details and company response.\n\nUpgrade at: ${process.env.NEXTAUTH_URL}/pricing\n\nBest regards,\nJobMatcher Team`;
+      const text = `Hello ${userName},\n\nYour application for ${jobTitle} at ${company} has been updated.\n\nUpgrade to PRO to see the full details and company response.\n\nUpgrade at: ${process.env.NEXTAUTH_URL}/pricing\n\nBest regards,\nWorkr Team`;
       
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -303,7 +303,7 @@ export class NotificationService {
             </a>
           </div>
           
-          <p>Best regards,<br>JobMatcher Team</p>
+          <p>Best regards,<br>Workr Team</p>
         </div>
       `;
       
@@ -330,7 +330,7 @@ export class NotificationService {
         statusMessage = `Your application for ${jobTitle} at ${company} has been updated.`;
     }
 
-    const text = `Hello ${userName},\n\n${statusMessage}\n\n${message ? `Company Message: "${message}"\n\n` : ''}View your application: ${process.env.NEXTAUTH_URL}/profile\n\nBest regards,\nJobMatcher Team`;
+    const text = `Hello ${userName},\n\n${statusMessage}\n\n${message ? `Company Message: "${message}"\n\n` : ''}View your application: ${process.env.NEXTAUTH_URL}/profile\n\nBest regards,\nWorkr Team`;
     
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -351,7 +351,7 @@ export class NotificationService {
           </a>
         </div>
         
-        <p>Best regards,<br>JobMatcher Team</p>
+        <p>Best regards,<br>Workr Team</p>
       </div>
     `;
 

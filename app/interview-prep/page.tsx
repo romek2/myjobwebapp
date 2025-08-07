@@ -243,7 +243,7 @@ export default function InterviewPrepPage() {
             <div className="text-center mb-6">
               <h3 className="text-lg font-medium mb-2">Ready to practice your interview skills?</h3>
               <p className="text-gray-700">
-                JobMatcher PRO members can access our mock interview platform to practice with AI interviewers or schedule sessions with real tech professionals.
+                Workr PRO members can access our mock interview platform to practice with AI interviewers or schedule sessions with real tech professionals.
               </p>
             </div>
             

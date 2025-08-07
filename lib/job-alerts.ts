@@ -173,11 +173,11 @@ async function sendAlertEmail(alert: JobAlert, job: Job): Promise<void> {
   emailText += `${job.description.substring(0, 200)}...\n\n`;
   emailText += `View and apply: ${job.url}\n\n`;
   emailText += `You can manage your job alerts in your account: ${process.env.NEXTAUTH_URL}/alerts\n\n`;
-  emailText += `Happy job hunting!\n\nThe JobMatcher Team`;
+  emailText += `Happy job hunting!\n\nThe Workr Team`;
   
   let emailHtml = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #4a6cf7;">JobMatcher</h2>
+      <h2 style="color: #4a6cf7;">Workr</h2>
       <p>Hello ${userName},</p>
       <p>We found a new job matching your "${alert.name}" alert:</p>
       
@@ -191,9 +191,9 @@ async function sendAlertEmail(alert: JobAlert, job: Job): Promise<void> {
         <a href="${job.url}" style="background-color: #4a6cf7; color: white; padding: 8px 15px; text-decoration: none; border-radius: 4px; display: inline-block;">View Job</a>
       </div>
       
-      <p>You can manage your job alerts in your <a href="${process.env.NEXTAUTH_URL}/alerts" style="color: #4a6cf7; text-decoration: underline;">JobMatcher account</a>.</p>
+      <p>You can manage your job alerts in your <a href="${process.env.NEXTAUTH_URL}/alerts" style="color: #4a6cf7; text-decoration: underline;">Workr account</a>.</p>
       <p>Happy job hunting!</p>
-      <p>The JobMatcher Team</p>
+      <p>The Workr Team</p>
     </div>
   `;
   
@@ -201,7 +201,7 @@ async function sendAlertEmail(alert: JobAlert, job: Job): Promise<void> {
   const msg = {
     to: alert.User.email,
     from: process.env.SENDGRID_FROM_EMAIL as string,
-    subject: `JobMatcher - New Job Match: ${job.title} at ${job.company}`,
+    subject: `Workr - New Job Match: ${job.title} at ${job.company}`,
     text: emailText,
     html: emailHtml,
   };

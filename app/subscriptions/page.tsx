@@ -166,7 +166,7 @@ export default function ManageSubscriptionsPage() {
                       <h3 className="text-sm text-gray-500 font-medium mb-1">Current Plan</h3>
                       <p className="flex items-center text-lg font-semibold text-green-700">
                         <Shield className="h-5 w-5 mr-2" />
-                        JobMatcher PRO
+                        Workr PRO
                       </p>
                     </div>
                     

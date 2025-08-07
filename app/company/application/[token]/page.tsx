@@ -251,7 +251,7 @@ export default function CompanyApplicationPortal() {
                 Try Again
               </Button>
               <p className="text-xs text-gray-400">
-                If this continues, please contact JobMatcher support.
+                If this continues, please contact Workr support.
               </p>
             </div>
           </CardContent>
@@ -285,7 +285,7 @@ export default function CompanyApplicationPortal() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Application Management</h1>
-          <p className="text-gray-600">JobMatcher Company Portal</p>
+          <p className="text-gray-600">Workr Company Portal</p>
         </div>
 
         {/* Success Message */}
@@ -576,7 +576,7 @@ export default function CompanyApplicationPortal() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Platform:</span>
-                  <span>JobMatcher</span>
+                  <span>Workr</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Token:</span>
@@ -590,7 +590,7 @@ export default function CompanyApplicationPortal() {
         {/* Footer */}
         <div className="text-center pt-8 border-t border-gray-200">
           <p className="text-sm text-gray-500">
-            Powered by <span className="font-semibold text-blue-600">JobMatcher</span> • 
+            Powered by <span className="font-semibold text-blue-600">Workr</span> • 
             Secure portal access expires in 7 days
           </p>
         </div>

@@ -196,7 +196,7 @@ Upgrade at ${process.env.NEXTAUTH_URL}/pricing to see company notes, interview d
     content += `Track all your applications: ${process.env.NEXTAUTH_URL}/profile
 
 Best regards,
-The JobMatcher Team
+The Workr Team
 
 ---
 Manage your notifications: ${process.env.NEXTAUTH_URL}/settings
@@ -287,7 +287,7 @@ Unsubscribe: ${process.env.NEXTAUTH_URL}/unsubscribe`;
           
           <p style="color: #777; font-size: 14px;">
             Best regards,<br>
-            The JobMatcher Team
+            The Workr Team
           </p>
           
           <p style="color: #777; font-size: 12px; margin-top: 20px;">

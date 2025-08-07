@@ -30,16 +30,16 @@ export async function GET(req: NextRequest) {
     const msg = {
       to: userEmail,
       from: process.env.SENDGRID_FROM_EMAIL as string,
-      subject: 'JobMatcher - Scheduled Test Email',
-      text: `Hello ${userName},\n\nThis is a scheduled test email from JobMatcher, sent approximately 1 minute after you requested it.\n\nScheduled at: ${new Date().toISOString()}\nExpected delivery: ${scheduledTime.toISOString()}\n\nThank you,\nThe JobMatcher Team`,
+      subject: 'Workr - Scheduled Test Email',
+      text: `Hello ${userName},\n\nThis is a scheduled test email from Workr, sent approximately 1 minute after you requested it.\n\nScheduled at: ${new Date().toISOString()}\nExpected delivery: ${scheduledTime.toISOString()}\n\nThank you,\nThe Workr Team`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #4a6cf7;">JobMatcher</h2>
+          <h2 style="color: #4a6cf7;">Workr</h2>
           <p>Hello ${userName},</p>
-          <p>This is a scheduled test email from JobMatcher, sent approximately 1 minute after you requested it.</p>
+          <p>This is a scheduled test email from Workr, sent approximately 1 minute after you requested it.</p>
           <p><strong>Scheduled at:</strong> ${new Date().toISOString()}<br>
           <strong>Expected delivery:</strong> ${scheduledTime.toISOString()}</p>
-          <p>Thank you,<br>The JobMatcher Team</p>
+          <p>Thank you,<br>The Workr Team</p>
         </div>
       `,
     };

@@ -9,7 +9,7 @@ export default function TermsOfServicePage() {
       <div className="prose prose-blue max-w-none">
         <h2>Introduction</h2>
         <p>
-          Welcome to JobMatcher. These Terms of Service ("Terms") govern your access to and use of our website, 
+          Welcome to Workr. These Terms of Service ("Terms") govern your access to and use of our website, 
           applications, and services (collectively, the "Services"). By accessing or using our Services, you agree 
           to be bound by these Terms. If you do not agree to these Terms, do not access or use our Services.
         </p>
@@ -72,7 +72,7 @@ export default function TermsOfServicePage() {
         <h2>Intellectual Property</h2>
         <p>
           The Services and all content, features, and functionality thereof, including but not limited to text, graphics, 
-          logos, icons, images, audio clips, and software, are owned by JobMatcher or its licensors and are protected by 
+          logos, icons, images, audio clips, and software, are owned by Workr or its licensors and are protected by 
           copyright, trademark, and other intellectual property laws.
         </p>
         <p>
@@ -99,7 +99,7 @@ export default function TermsOfServicePage() {
 
         <h2>Limitation of Liability</h2>
         <p>
-          TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL JOBMATCHER, ITS AFFILIATES, OR THEIR 
+          TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL Workr, ITS AFFILIATES, OR THEIR 
           RESPECTIVE OFFICERS, DIRECTORS, EMPLOYEES, OR AGENTS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, 
           CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING WITHOUT LIMITATION, LOSS OF PROFITS, DATA, USE, GOODWILL, OR 
           OTHER INTANGIBLE LOSSES, RESULTING FROM (A) YOUR ACCESS TO OR USE OF OR INABILITY TO ACCESS OR USE THE 
@@ -111,7 +111,7 @@ export default function TermsOfServicePage() {
 
         <h2>Indemnification</h2>
         <p>
-          You agree to indemnify, defend, and hold harmless JobMatcher, its affiliates, and their respective officers, 
+          You agree to indemnify, defend, and hold harmless Workr, its affiliates, and their respective officers, 
           directors, employees, and agents from and against any and all claims, liabilities, damages, losses, costs, 
           expenses, or fees (including reasonable attorneys' fees) arising from (a) your use of the Services; (b) your 
           violation of these Terms; (c) your violation of any rights of another; or (d) your User Content.
@@ -148,8 +148,8 @@ export default function TermsOfServicePage() {
         <p>
           If you have any questions about these Terms, please contact us at:
           <br />
-          <a href="mailto:legal@jobmatcher.com" className="text-blue-600 hover:underline">
-            legal@jobmatcher.com
+          <a href="mailto:legal@Workr.com" className="text-blue-600 hover:underline">
+            legal@Workr.com
           </a>
         </p>
       </div>

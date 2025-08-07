@@ -113,7 +113,7 @@ This link allows you to:
 Link expires in 7 days for security.
 
 ---
-This application was submitted through JobMatcher.
+This application was submitted through Workr.
 Reply directly to this email to contact the applicant at ${applicantEmail}
     `.trim();
 
@@ -131,7 +131,7 @@ Reply directly to this email to contact the applicant at ${applicantEmail}
         <!-- Header -->
         <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #4a6cf7;">
           <h1 style="color: #4a6cf7; margin: 0; font-size: 28px;">New Job Application</h1>
-          <p style="color: #666; margin: 5px 0 0 0; font-size: 16px;">JobMatcher Platform</p>
+          <p style="color: #666; margin: 5px 0 0 0; font-size: 16px;">Workr Platform</p>
         </div>
 
         <!-- Quick Action Buttons -->
@@ -228,7 +228,7 @@ ${coverLetter}
 
         <!-- Footer -->
         <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 14px; text-align: center;">
-          <p style="margin: 0 0 10px 0;">This application was submitted through <strong>JobMatcher</strong></p>
+          <p style="margin: 0 0 10px 0;">This application was submitted through <strong>Workr</strong></p>
           <p style="margin: 0 0 10px 0;">Reply directly to this email to contact the applicant at <a href="mailto:${applicantEmail}" style="color: #4a6cf7;">${applicantEmail}</a></p>
           <p style="margin: 0; font-size: 12px; color: #94a3b8;">
             Secure link expires on ${new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}
@@ -254,7 +254,7 @@ ${coverLetter}
     try {
       const subject = `Application Confirmed: ${jobTitle} at ${company}`;
       
-      const text = `Hello ${applicantName},\n\nYour application for ${jobTitle} at ${company} has been successfully submitted!\n\nYou can track your application status in your JobMatcher dashboard: ${process.env.NEXTAUTH_URL}/profile\n\nWe'll notify you of any updates from the employer.\n\nBest regards,\nJobMatcher Team`;
+      const text = `Hello ${applicantName},\n\nYour application for ${jobTitle} at ${company} has been successfully submitted!\n\nYou can track your application status in your Workr dashboard: ${process.env.NEXTAUTH_URL}/profile\n\nWe'll notify you of any updates from the employer.\n\nBest regards,\nWorkr Team`;
       
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -270,7 +270,7 @@ ${coverLetter}
             <p style="margin: 5px 0 0 0;"><strong>Company:</strong> ${company}</p>
           </div>
           
-          <p>You can track your application status and any updates from the employer in your JobMatcher dashboard.</p>
+          <p>You can track your application status and any updates from the employer in your Workr dashboard.</p>
           
           <div style="text-align: center; margin: 25px 0;">
             <a href="${process.env.NEXTAUTH_URL}/profile" style="background: #4a6cf7; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">
@@ -280,7 +280,7 @@ ${coverLetter}
           
           <p style="color: #64748b; font-size: 14px;">We'll send you email notifications when the employer updates your application status.</p>
           
-          <p>Best regards,<br>JobMatcher Team</p>
+          <p>Best regards,<br>Workr Team</p>
         </div>
       `;
 

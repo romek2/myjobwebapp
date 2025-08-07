@@ -42,7 +42,7 @@ const Navbar = () => {
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full animate-pulse"></div>
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                JobMatcher
+                Workr
               </span>
             </Link>
             

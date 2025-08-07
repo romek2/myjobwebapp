@@ -5,13 +5,13 @@ import { Card, CardContent } from "@/components/ui/card";
 export default function AboutUsPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-6">About JobMatcher</h1>
+      <h1 className="text-3xl font-bold mb-6">About Workr</h1>
       
       <Card className="mb-8">
         <CardContent className="p-6">
           <h2 className="text-xl font-semibold mb-4">Our Mission</h2>
           <p className="text-gray-700 mb-4">
-            At JobMatcher, we're on a mission to transform how tech professionals find their ideal roles. 
+            At Workr, we're on a mission to transform how tech professionals find their ideal roles. 
             We believe that the right job match isn't just about matching keywords—it's about understanding 
             the unique skills, experiences, and career aspirations of every individual.
           </p>
@@ -26,14 +26,14 @@ export default function AboutUsPage() {
         <CardContent className="p-6">
           <h2 className="text-xl font-semibold mb-4">Our Story</h2>
           <p className="text-gray-700 mb-4">
-            JobMatcher was founded in 2023 by a team of tech professionals who experienced firsthand 
+           Workr was founded in 2023 by a team of tech professionals who experienced firsthand 
             the challenges of finding the right job fit in the rapidly evolving tech landscape. 
             After spending countless hours sifting through generic job listings that didn't align 
             with their skills or career goals, they decided there had to be a better way.
           </p>
           <p className="text-gray-700">
             Starting with a simple idea—that resume analysis could intelligently match candidates with 
-            suitable job opportunities—JobMatcher has grown into a comprehensive platform that serves 
+            suitable job opportunities Workr has grown into a comprehensive platform that serves 
             thousands of tech professionals and companies across the industry.
           </p>
         </CardContent>
@@ -86,7 +86,7 @@ export default function AboutUsPage() {
           </p>
           <p className="text-gray-700">
             United by our commitment to innovation, transparency, and user-centered design, we're working 
-            every day to make JobMatcher the most trusted platform for tech career advancement.
+            every day to make Workr the most trusted platform for tech career advancement.
           </p>
         </CardContent>
       </Card>

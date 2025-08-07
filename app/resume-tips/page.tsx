@@ -96,7 +96,7 @@ export default function ResumeTipsPage() {
               <h4 className="text-blue-800 font-medium mb-2">Pro Tip:</h4>
               <p className="text-gray-700">
                 Analyze the job description for keywords and ensure your skills section includes the specific technologies and 
-                tools mentioned in the posting. Our JobMatcher platform automatically highlights skill matches between your 
+                tools mentioned in the posting. Our Workr platform automatically highlights skill matches between your 
                 resume and job listings to help you target the right opportunities.
               </p>
             </div>

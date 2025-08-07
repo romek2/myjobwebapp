@@ -9,13 +9,13 @@ export default function PrivacyPolicyPage() {
       <div className="prose prose-blue max-w-none">
         <h2>Introduction</h2>
         <p>
-          JobMatcher ("we," "our," or "us") respects your privacy and is committed to protecting your personal data. 
+          Workr ("we," "our," or "us") respects your privacy and is committed to protecting your personal data. 
           This privacy policy explains how we collect, use, disclose, and safeguard your information when you use our 
           job matching platform and services.
         </p>
         <p>
           Please read this privacy policy carefully. If you disagree with our policies and practices, please do not use 
-          our services. By accessing or using JobMatcher, you agree to this privacy policy.
+          our services. By accessing or using Workr, you agree to this privacy policy.
         </p>
 
         <h2>Information We Collect</h2>
@@ -138,8 +138,8 @@ export default function PrivacyPolicyPage() {
         <p>
           If you have questions or concerns about this privacy policy or our practices, please contact us at:
           <br />
-          <a href="mailto:privacy@jobmatcher.com" className="text-blue-600 hover:underline">
-            privacy@jobmatcher.com
+          <a href="mailto:privacy@Workr.com" className="text-blue-600 hover:underline">
+            privacy@Workr.com
           </a>
         </p>
       </div>
