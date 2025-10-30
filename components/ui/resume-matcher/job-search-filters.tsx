@@ -126,7 +126,7 @@ const JobSearchFilters: React.FC<JobSearchFiltersProps> = ({ filters, onChange }
           
           {/* Popular Locations */}
           <div className="flex flex-wrap gap-2 mt-2">
-            {['Remote', 'New York', 'London', 'San Francisco'].map((suggestion) => (
+            {['Remote', 'USA', 'Poland', 'Philippines'].map((suggestion) => (
               <button
                 key={suggestion}
                 onClick={() => onChange({ ...filters, location: suggestion })}

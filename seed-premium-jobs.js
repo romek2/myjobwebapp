@@ -25,7 +25,7 @@ async function seedPremiumJobs() {
       {
         title: 'Lead React Engineer',
         company: 'Fortune 100 Company',
-        location: 'New York, NY',
+        location: 'USA',
         description: 'Our client, a leading Fortune 100 company, is seeking a Lead React Engineer to join their digital transformation team. This role offers exceptional benefits and growth opportunities.',
         url: '/jobs/premium-2',
         salary: '$170,000 - $200,000',
@@ -35,7 +35,7 @@ async function seedPremiumJobs() {
       {
         title: 'Principal UI Engineer',
         company: 'Stealth Startup',
-        location: 'San Francisco, CA',
+        location: 'Romania',
         description: 'Join an exciting stealth startup backed by top-tier VCs. We are looking for a Principal UI Engineer to help build our revolutionary product from the ground up.',
         url: '/jobs/premium-3',
         salary: '$160,000 - $190,000 + equity',
