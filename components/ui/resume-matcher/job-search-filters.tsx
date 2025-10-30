@@ -89,7 +89,7 @@ const JobSearchFilters: React.FC<JobSearchFiltersProps> = ({ filters, onChange }
           
           {/* Popular Job Titles */}
           <div className="flex flex-wrap gap-2 mt-2">
-            {['Frontend Developer', 'Backend Developer', 'Full Stack', 'DevOps Engineer'].map((suggestion) => (
+            {['Developer', 'Designer', 'Sales', 'Writer'].map((suggestion) => (
               <button
                 key={suggestion}
                 onClick={() => onChange({ ...filters, title: suggestion })}
