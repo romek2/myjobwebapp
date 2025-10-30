@@ -554,7 +554,7 @@ function JobFormModal({ job, onClose, onSubmit, title }: JobFormModalProps) {
                 value={formData.location}
                 onChange={(e) => setFormData({...formData, location: e.target.value})}
                 className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., Remote, New York, NY"
+                placeholder="e.g., Remote, USA"
                 required
               />
             </div>

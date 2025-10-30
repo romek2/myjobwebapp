@@ -18,7 +18,7 @@ const PREMIUM_JOBS = [
     id: 'pj2',
     title: 'Lead Frontend Architect',
     company: 'Fortune 100 Company',
-    location: 'New York, NY',
+    location: 'USA',
     salary: '$170K - $200K',
     postedAt: '1 day ago'
   },

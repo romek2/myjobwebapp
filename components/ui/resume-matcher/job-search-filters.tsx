@@ -112,7 +112,7 @@ const JobSearchFilters: React.FC<JobSearchFiltersProps> = ({ filters, onChange }
           <div className="relative">
             <Input
               id="location"
-              placeholder="e.g., Remote, New York, London"
+              placeholder="e.g., Remote, USA, Poland"
               value={filters.location}
               onChange={handleChange('location')}
               className="pl-4 pr-4 py-3 rounded-xl border-gray-200 bg-white/60 backdrop-blur-sm focus:ring-2 focus:ring-purple-500 transition-all duration-300 hover:bg-white/80"
