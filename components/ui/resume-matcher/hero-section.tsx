@@ -91,62 +91,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
             </div>
           </div>
 
-          {/* Popular searches with icons and colors */}
-          <div className="mt-6">
-            <p className="text-blue-200 text-sm mb-3 font-medium">Popular Searches:</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {popularSearches.map(({ query, icon: Icon, color }, index) => (
-                <button
-                  key={query}
-                  onClick={() => handleQuickSearch(query)}
-                  className={`group inline-flex items-center px-3 py-2 bg-white/10 backdrop-blur-sm text-white text-sm font-medium rounded-xl hover:bg-white/20 transition-all duration-300 hover:scale-105 border border-white/20 hover:shadow-lg`}
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <div className={`w-4 h-4 mr-2 bg-gradient-to-br ${color} rounded p-0.5`}>
-                    <Icon className="w-full h-full text-white" />
-                  </div>
-                  {query}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Stats section */}
-          <div className="mt-11 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {[
-              { 
-                icon: TrendingUp, 
-                number: '10,000+', 
-                label: 'Active Jobs',
-                color: 'from-green-400 to-emerald-500'
-              },
-              { 
-                icon: Users, 
-                number: '500+', 
-                label: 'Top Companies',
-                color: 'from-blue-400 to-cyan-500'
-              },
-              { 
-                icon: Zap, 
-                number: '95%', 
-                label: 'Match Success',
-                color: 'from-purple-400 to-pink-500'
-              }
-            ].map(({ icon: Icon, number, label, color }, index) => (
-              <div 
-                key={label} 
-                className="group bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105"
-                style={{ animationDelay: `${index * 200}ms` }}
-              >
-                <div className={`inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br ${color} rounded-xl mb-3 group-hover:rotate-12 transition-transform duration-300`}>
-                  <Icon className="w-5 h-5 text-white" />
-                </div>
-                <div className="text-2xl font-bold text-white mb-1">{number}</div>
-                <div className="text-blue-200 text-sm font-medium">{label}</div>
-              </div>
-            ))}
-          </div>
-
+         
           {/* CTA Section */}
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto">
             <div className="text-blue-200 text-sm">
