@@ -1,4 +1,3 @@
-// app/test-email-simple/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -31,7 +30,6 @@ export default function SimpleEmailTestPage() {
   const [result, setResult] = useState<EmailResult | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
 
-  // Load configuration on mount
   useEffect(() => {
     if (session?.user) {
       loadConfig();
@@ -111,8 +109,8 @@ export default function SimpleEmailTestPage() {
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold mb-2">Simple Email Test</h1>
-        <p className="text-gray-600">Test your SendGrid integration with a simple email</p>
+        <h1 className="text-3xl font-bold mb-2">Email System Test</h1>
+        <p className="text-gray-600">Test your Resend integration with a simple email</p>
       </div>
 
       {/* Configuration Status */}
@@ -127,7 +125,7 @@ export default function SimpleEmailTestPage() {
           {config ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span>SendGrid API Key:</span>
+                <span>Resend API Key:</span>
                 <span className={`px-2 py-1 rounded text-sm ${
                   config.hasApiKey ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                 }`}>
@@ -173,8 +171,8 @@ export default function SimpleEmailTestPage() {
         <CardContent>
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              This will send a simple test email to your account ({session.user?.email}) 
-              to verify that SendGrid is working correctly.
+              This will send a test email to your account ({session.user?.email}) 
+              to verify that Resend is working correctly.
             </p>
             
             <Button
@@ -197,7 +195,7 @@ export default function SimpleEmailTestPage() {
             
             {!config?.ready && (
               <p className="text-sm text-red-600">
-                Please configure SendGrid API key and from email before testing.
+                Please configure RESEND_API_KEY and RESEND_FROM_EMAIL in Vercel environment variables.
               </p>
             )}
           </div>
@@ -222,7 +220,7 @@ export default function SimpleEmailTestPage() {
                     <ul className="text-sm text-gray-700 space-y-1">
                       <li>Recipient: {result.details.recipient}</li>
                       <li>From: {result.details.from}</li>
-                      <li>Status Code: {result.details.statusCode}</li>
+                      {result.details.messageId && <li>Message ID: {result.details.messageId}</li>}
                       <li>Timestamp: {new Date(result.details.timestamp).toLocaleString()}</li>
                     </ul>
                   </div>
@@ -238,7 +236,7 @@ export default function SimpleEmailTestPage() {
                 <AlertDescription>
                   <strong>Error:</strong> {result.error}
                   {result.details && (
-                    <div className="mt-2 text-xs font-mono bg-red-50 p-2 rounded">
+                    <div className="mt-2 text-xs font-mono bg-red-50 p-2 rounded overflow-auto">
                       {typeof result.details === 'string' 
                         ? result.details 
                         : JSON.stringify(result.details, null, 2)}
@@ -256,18 +254,26 @@ export default function SimpleEmailTestPage() {
         <CardContent className="p-6">
           <h3 className="font-medium mb-3 text-blue-800">How to use this test:</h3>
           <ol className="text-sm text-blue-700 space-y-1 ml-4">
-            <li>1. Make sure your SendGrid configuration is complete (green checkmarks above)</li>
-            <li>2. Click "Send Test Email" to send a simple test message</li>
+            <li>1. Make sure your Resend configuration is complete (green checkmarks above)</li>
+            <li>2. Click "Send Test Email" to send a test message</li>
             <li>3. Check your email inbox (and spam folder) for the test email</li>
-            <li>4. If successful, your SendGrid integration is working!</li>
+            <li>4. If successful, your Resend integration is working!</li>
           </ol>
           
           <div className="mt-4 p-3 bg-white rounded border border-blue-200">
+            <p className="text-sm text-blue-800 font-medium">Environment Variables Needed:</p>
+            <ul className="text-xs text-blue-700 mt-2 space-y-1 ml-4 font-mono">
+              <li>• RESEND_API_KEY (from Resend dashboard)</li>
+              <li>• RESEND_FROM_EMAIL (e.g., noreply@workr.tech)</li>
+            </ul>
+          </div>
+
+          <div className="mt-4 p-3 bg-white rounded border border-blue-200">
             <p className="text-sm text-blue-800 font-medium">Troubleshooting:</p>
             <ul className="text-xs text-blue-700 mt-2 space-y-1 ml-4">
-              <li>• Verify your SendGrid API key in environment variables</li>
-              <li>• Ensure your domain is verified in SendGrid</li>
-              <li>• Check that SENDGRID_FROM_EMAIL uses your verified domain</li>
+              <li>• Verify RESEND_API_KEY in Vercel environment variables</li>
+              <li>• Ensure your domain is verified in Resend dashboard</li>
+              <li>• Check that RESEND_FROM_EMAIL matches your verified domain</li>
               <li>• Look for error details in the result above</li>
             </ul>
           </div>

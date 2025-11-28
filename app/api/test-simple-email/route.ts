@@ -1,11 +1,10 @@
-// app/api/test-simple-email/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import sgMail from '@sendgrid/mail';
+import { Resend } from 'resend';
 
-// Initialize SendGrid
-sgMail.setApiKey(process.env.SENDGRID_API_KEY as string);
+// Initialize Resend
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,70 +19,92 @@ export async function POST(req: NextRequest) {
     const userEmail = session.user.email;
     const userName = session.user.name || 'User';
     
-    console.log(`Attempting to send test email to ${userName} (${userEmail})`);
+    console.log(`📧 Attempting to send test email to ${userName} (${userEmail})`);
     
-    // Create a simple test email
-    const msg = {
+    // Check environment variables
+    if (!process.env.RESEND_API_KEY) {
+      return NextResponse.json({ 
+        error: 'RESEND_API_KEY not configured',
+        details: 'Please add RESEND_API_KEY to your environment variables'
+      }, { status: 500 });
+    }
+
+    if (!process.env.RESEND_FROM_EMAIL) {
+      return NextResponse.json({ 
+        error: 'RESEND_FROM_EMAIL not configured',
+        details: 'Please add RESEND_FROM_EMAIL to your environment variables'
+      }, { status: 500 });
+    }
+    
+    // Send the email using Resend
+    const { data, error } = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL,
       to: userEmail,
-      from: process.env.SENDGRID_FROM_EMAIL as string,
-      subject: 'Test Email from Your Website',
-      text: `Hello ${userName}!\n\nThis is a simple test email to verify that SendGrid is working correctly.\n\nSent at: ${new Date().toISOString()}\n\nBest regards,\nYour Website`,
+      subject: 'Test Email from WorkR (Resend)',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #4a6cf7;">Email Test Successful! 🎉</h2>
-          <p>Hello ${userName}!</p>
-          <p>This is a simple test email to verify that SendGrid is working correctly.</p>
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px; text-align: center;">
+            <h1 style="color: white; margin: 0;">🎉 Email Test Successful!</h1>
+          </div>
           
-          <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>Test Details:</strong></p>
-            <ul style="margin: 10px 0;">
-              <li>Sent to: ${userEmail}</li>
-              <li>From: ${process.env.SENDGRID_FROM_EMAIL}</li>
-              <li>Time: ${new Date().toLocaleString()}</li>
-              <li>Status: ✅ SendGrid API call successful</li>
+          <div style="background: #f9fafb; padding: 30px; border-radius: 10px; margin-top: 20px;">
+            <h2 style="color: #374151; margin-top: 0;">Hello ${userName}!</h2>
+            <p style="color: #6b7280; line-height: 1.6;">
+              This is a test email to verify that your Resend integration is working correctly. 
+              If you're reading this, everything is set up perfectly! ✨
+            </p>
+            
+            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin: 20px 0;">
+              <p style="margin: 0; color: #374151;"><strong>Test Details:</strong></p>
+              <ul style="margin: 10px 0; color: #6b7280; padding-left: 20px;">
+                <li>Sent to: ${userEmail}</li>
+                <li>From: ${process.env.RESEND_FROM_EMAIL}</li>
+                <li>Time: ${new Date().toLocaleString()}</li>
+                <li>Status: ✅ Resend API call successful</li>
+              </ul>
+            </div>
+            
+            <p style="color: #6b7280; line-height: 1.6;">
+              Your WorkR application is now ready to send:
+            </p>
+            <ul style="color: #6b7280; line-height: 1.8;">
+              <li>Job application confirmations</li>
+              <li>Employer notifications</li>
+              <li>Status update emails</li>
+              <li>And more!</li>
             </ul>
           </div>
           
-          <p>If you received this email, your SendGrid integration is working perfectly!</p>
-          
-          <p style="color: #666; font-size: 14px; margin-top: 30px;">
-            Best regards,<br>
-            Your Website Team
-          </p>
+          <div style="text-align: center; margin-top: 30px; color: #9ca3af; font-size: 12px;">
+            <p>Sent from WorkR • Powered by Resend</p>
+          </div>
         </div>
       `,
-    };
+    });
     
-    // Send the email
-    const response = await sgMail.send(msg);
+    if (error) {
+      console.error('❌ Resend API Error:', error);
+      return NextResponse.json({ 
+        error: 'Resend API error',
+        details: error
+      }, { status: 400 });
+    }
     
-    console.log('SendGrid response:', response[0].statusCode);
+    console.log('✅ Email sent successfully:', data);
     
     return NextResponse.json({ 
       success: true, 
       message: `Test email sent successfully to ${userEmail}`,
       details: {
         recipient: userEmail,
-        from: process.env.SENDGRID_FROM_EMAIL,
-        statusCode: response[0].statusCode,
+        from: process.env.RESEND_FROM_EMAIL,
+        messageId: data?.id,
         timestamp: new Date().toISOString()
       }
     });
     
   } catch (error: any) {
-    console.error('Error sending test email:', error);
-    
-    // SendGrid-specific error handling
-    if (error.response) {
-      console.error('SendGrid API Error:', error.response.body);
-      return NextResponse.json({ 
-        error: 'SendGrid API error',
-        details: error.response.body?.errors || error.message,
-        statusCode: error.code
-      }, { 
-        status: 400 
-      });
-    }
+    console.error('💥 Error sending test email:', error);
     
     return NextResponse.json({ 
       error: 'Failed to send test email',
@@ -104,17 +125,15 @@ export async function GET(req: NextRequest) {
     }
 
     // Check environment variables
-    const hasApiKey = !!process.env.SENDGRID_API_KEY;
-    const hasFromEmail = !!process.env.SENDGRID_FROM_EMAIL;
+    const hasApiKey = !!process.env.RESEND_API_KEY;
+    const hasFromEmail = !!process.env.RESEND_FROM_EMAIL;
     
     return NextResponse.json({
-      config: {
-        hasApiKey,
-        hasFromEmail,
-        fromEmail: process.env.SENDGRID_FROM_EMAIL,
-        userEmail: session.user.email,
-        userName: session.user.name
-      },
+      hasApiKey,
+      hasFromEmail,
+      fromEmail: process.env.RESEND_FROM_EMAIL,
+      userEmail: session.user.email,
+      userName: session.user.name,
       ready: hasApiKey && hasFromEmail
     });
     
