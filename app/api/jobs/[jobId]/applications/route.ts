@@ -3,17 +3,20 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { jobId: string } }
-) {
+export async function GET(req: NextRequest) {
   try {
+    // Check authentication
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { jobId } = params;
+    // Extract jobId from URL (same way as your apply route)
+    const url = new URL(req.url);
+    const jobId = url.pathname.split('/')[3]; // Gets jobId from /api/jobs/[jobId]/applications
+    
+    console.log('📍 Fetching applications for job:', jobId);
+
     const supabase = createServerSupabase();
 
     // Fetch job details
@@ -24,10 +27,11 @@ export async function GET(
       .single();
 
     if (jobError || !job) {
+      console.error('Job not found:', jobError);
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
-    // Fetch applications
+    // Fetch all applications for this job
     const { data: applications, error: appsError } = await supabase
       .from('user_job_applications')
       .select(`
@@ -43,9 +47,12 @@ export async function GET(
     if (appsError) {
       console.error('Error fetching applications:', appsError);
       return NextResponse.json({ 
-        error: 'Failed to fetch applications' 
+        error: 'Failed to fetch applications',
+        details: appsError.message 
       }, { status: 500 });
     }
+
+    console.log(`✅ Found ${applications?.length || 0} applications for job ${jobId}`);
 
     return NextResponse.json({
       job,
@@ -53,9 +60,10 @@ export async function GET(
     });
 
   } catch (error: any) {
-    console.error('Error:', error);
+    console.error('💥 Error in applications route:', error);
     return NextResponse.json({ 
-      error: 'Internal server error' 
+      error: 'Internal server error',
+      details: error.message 
     }, { status: 500 });
   }
 }
