@@ -155,19 +155,29 @@ export default function ApplicationDetailPage() {
     }
   };
 
-  
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case 'applied': return <Clock className="h-4 w-4 text-blue-500" />;
+    case 'under_review': return <RefreshCw className="h-4 w-4 text-yellow-500" />;
+    case 'interview': return <Calendar className="h-4 w-4 text-purple-500" />;
+    case 'offer': return <CheckCircle className="h-4 w-4 text-green-500" />;
+    case 'hired': return <UserCheck className="h-4 w-4 text-green-600" />;
+    case 'rejected': return <XCircle className="h-4 w-4 text-red-500" />;
+    default: return <Clock className="h-4 w-4 text-gray-500" />;
+  }
+};
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      'applied': 'bg-blue-100 text-blue-800',
-      'under_review': 'bg-yellow-100 text-yellow-800',
-      'interview': 'bg-purple-100 text-purple-800',
-      'offer': 'bg-green-100 text-green-800',
-      'hired': 'bg-green-100 text-green-800',
-      'rejected': 'bg-red-100 text-red-800',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'applied': return 'bg-blue-100 text-blue-800';
+    case 'under_review': return 'bg-yellow-100 text-yellow-800';
+    case 'interview': return 'bg-purple-100 text-purple-800';
+    case 'offer': return 'bg-green-100 text-green-800';
+    case 'hired': return 'bg-green-100 text-green-800';
+    case 'rejected': return 'bg-red-100 text-red-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+};
 
   const formatDate = (dateString: string) => {
     try {
@@ -278,7 +288,7 @@ export default function ApplicationDetailPage() {
                   <div className="flex items-center gap-2 mt-2">
                     <span className="text-sm text-gray-500">Status:</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${getStatusColor(application.status)}`}>
-                      (application.status)
+                      {getStatusIcon(application.status)}
                       {application.status.replace('_', ' ').toUpperCase()}
                     </span>
                   </div>
