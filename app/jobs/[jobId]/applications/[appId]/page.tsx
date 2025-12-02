@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 
 interface ApplicationData {
-  id: string;
+  id: string | number;
   user_id: string;
   job_id: number;
   job_title: string;
@@ -69,13 +69,14 @@ export default function ApplicationDetailPage() {
   const [interviewer, setInterviewer] = useState('');
   const [location, setLocation] = useState('');
 
+  // Load application data
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/api/auth/signin');
       return;
     }
 
-    if (status === 'authenticated') {
+    if (status === 'authenticated' && jobId && appId) {
       loadApplication();
     }
   }, [status, jobId, appId, router]);
@@ -85,13 +86,26 @@ export default function ApplicationDetailPage() {
       setIsLoading(true);
       setError(null);
       
+      console.log('🔍 Loading application data...');
+      
       const response = await fetch(`/api/jobs/${jobId}/applications/${appId}`);
       
+      console.log('📡 API Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to load application');
+        const errorText = await response.text();
+        console.error('❌ API Error:', errorText);
+        throw new Error(`Failed to load application (${response.status})`);
       }
       
       const data = await response.json();
+      console.log('✅ Received data:', data);
+      
+      if (!data || !data.application) {
+        console.error('❌ Invalid response structure:', data);
+        throw new Error('Invalid response from server');
+      }
+      
       setApplication(data.application);
       setSelectedStatus(data.application.status);
       setCompanyNotes(data.application.company_notes || '');
@@ -101,8 +115,8 @@ export default function ApplicationDetailPage() {
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load application';
+      console.error('💥 Error in loadApplication:', err);
       setError(errorMessage);
-      console.error('Error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -114,6 +128,8 @@ export default function ApplicationDetailPage() {
     try {
       setIsUpdating(true);
       setError(null);
+      
+      console.log('📤 Updating status to:', selectedStatus);
       
       const response = await fetch(`/api/jobs/${jobId}/applications/${appId}/update`, {
         method: 'POST',
@@ -133,6 +149,7 @@ export default function ApplicationDetailPage() {
       }
 
       const result = await response.json();
+      console.log('✅ Update successful:', result);
       
       // Update local state
       setApplication(prev => prev ? {
@@ -149,35 +166,37 @@ export default function ApplicationDetailPage() {
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update application';
+      console.error('💥 Update error:', err);
       setError(errorMessage);
     } finally {
       setIsUpdating(false);
     }
   };
 
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'applied': return <Clock className="h-4 w-4 text-blue-500" />;
-    case 'under_review': return <RefreshCw className="h-4 w-4 text-yellow-500" />;
-    case 'interview': return <Calendar className="h-4 w-4 text-purple-500" />;
-    case 'offer': return <CheckCircle className="h-4 w-4 text-green-500" />;
-    case 'hired': return <UserCheck className="h-4 w-4 text-green-600" />;
-    case 'rejected': return <XCircle className="h-4 w-4 text-red-500" />;
-    default: return <Clock className="h-4 w-4 text-gray-500" />;
-  }
-};
+  // Helper functions
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'applied': return <Clock className="h-4 w-4 text-blue-500" />;
+      case 'under_review': return <RefreshCw className="h-4 w-4 text-yellow-500" />;
+      case 'interview': return <Calendar className="h-4 w-4 text-purple-500" />;
+      case 'offer': return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'hired': return <UserCheck className="h-4 w-4 text-green-600" />;
+      case 'rejected': return <XCircle className="h-4 w-4 text-red-500" />;
+      default: return <Clock className="h-4 w-4 text-gray-500" />;
+    }
+  };
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'applied': return 'bg-blue-100 text-blue-800';
-    case 'under_review': return 'bg-yellow-100 text-yellow-800';
-    case 'interview': return 'bg-purple-100 text-purple-800';
-    case 'offer': return 'bg-green-100 text-green-800';
-    case 'hired': return 'bg-green-100 text-green-800';
-    case 'rejected': return 'bg-red-100 text-red-800';
-    default: return 'bg-gray-100 text-gray-800';
-  }
-};
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'applied': return 'bg-blue-100 text-blue-800';
+      case 'under_review': return 'bg-yellow-100 text-yellow-800';
+      case 'interview': return 'bg-purple-100 text-purple-800';
+      case 'offer': return 'bg-green-100 text-green-800';
+      case 'hired': return 'bg-green-100 text-green-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   const formatDate = (dateString: string) => {
     try {
@@ -187,6 +206,7 @@ const getStatusColor = (status: string) => {
     }
   };
 
+  // Loading state
   if (status === 'loading' || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -200,6 +220,7 @@ const getStatusColor = (status: string) => {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -208,16 +229,23 @@ const getStatusColor = (status: string) => {
             <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
             <h2 className="text-xl font-semibold mb-2">Error</h2>
             <p className="text-gray-600 mb-4">{error}</p>
-            <Button onClick={() => router.back()} variant="outline" className="w-full">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Go Back
-            </Button>
+            <div className="space-y-2">
+              <Button onClick={loadApplication} variant="outline" className="w-full">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+              <Button onClick={() => router.back()} variant="outline" className="w-full">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Go Back
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
 
+  // No data state
   if (!application) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -225,7 +253,11 @@ const getStatusColor = (status: string) => {
           <CardContent className="p-8 text-center">
             <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-500" />
             <h2 className="text-xl font-semibold mb-2">Application Not Found</h2>
-            <p className="text-gray-600">Unable to load application data.</p>
+            <p className="text-gray-600 mb-4">Unable to load application data.</p>
+            <Button onClick={() => router.back()} variant="outline" className="w-full">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Go Back
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -522,7 +554,7 @@ const getStatusColor = (status: string) => {
               <CardContent className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Application ID:</span>
-                  <span className="font-mono">{application.id.substring(0, 8)}...</span>
+                  <span className="font-mono">{application.id}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Submitted:</span>

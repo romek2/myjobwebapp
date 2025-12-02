@@ -3,24 +3,25 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { createServerSupabase } from '@/lib/supabase';
 
-export async function GET(req: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     console.log('🔍 Fetching single application...');
     
+    // Check authentication
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Extract IDs from URL
-    const url = new URL(req.url);
-    console.log('📍 Full URL:', url.pathname);
+    // Extract IDs from URL path (same pattern as your company portal)
+    const pathname = request.nextUrl.pathname;
+    const pathParts = pathname.split('/');
     
-    const pathParts = url.pathname.split('/');
+    console.log('📍 URL pathname:', pathname);
     console.log('📍 Path parts:', pathParts);
     
     // /api/jobs/[jobId]/applications/[appId]
-    // [0]='', [1]='api', [2]='jobs', [3]=jobId, [4]='applications', [5]=appId
+    // pathParts: ['', 'api', 'jobs', '6074', 'applications', '39']
     const jobId = pathParts[3];
     const appId = pathParts[5];
     
@@ -35,62 +36,58 @@ export async function GET(req: NextRequest) {
 
     const supabase = createServerSupabase();
 
-    // First, check if application exists at all
-    console.log('🔍 Checking if application exists...');
-    const { data: checkApp, error: checkError } = await supabase
-      .from('user_job_applications')
-      .select('id, job_id')
-      .eq('id', appId);
+    // Fetch application with user data
+    console.log(`🔍 Querying application ${appId} for job ${jobId}...`);
     
-    console.log('Check result:', { checkApp, checkError });
-
-    // Fetch single application with user data
-    console.log('🔍 Fetching application with user data...');
     const { data: application, error } = await supabase
       .from('user_job_applications')
-      .select(`
-        *,
-        user:user_id (
-          name,
-          email
-        )
-      `)
+      .select('*')
       .eq('id', appId)
       .eq('job_id', jobId)
       .single();
-
-    console.log('📄 Application fetch result:', {
-      found: !!application,
-      error: error?.message,
-      errorCode: error?.code,
-      errorDetails: error?.details
-    });
 
     if (error) {
       console.error('❌ Supabase error:', error);
       return NextResponse.json({ 
         error: 'Application not found',
-        details: error.message,
-        hint: error.hint
+        details: error.message
       }, { status: 404 });
     }
 
     if (!application) {
+      console.log('❌ No application found');
       return NextResponse.json({ 
-        error: 'Application not found',
-        jobId,
-        appId
+        error: 'Application not found'
       }, { status: 404 });
     }
 
-    console.log('✅ Application found:', application.id);
-    return NextResponse.json({ application });
+    // Fetch user data separately (more reliable than join)
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('name, email')
+      .eq('id', application.user_id)
+      .single();
 
-  } catch (error: any) {
+    if (userError) {
+      console.error('⚠️ User fetch error:', userError);
+      // Continue anyway, just without user data
+    }
+
+    // Add user data to application
+    const applicationWithUser = {
+      ...application,
+      user: user || { name: 'Unknown', email: 'Unknown' }
+    };
+
+    console.log('✅ Successfully loaded application:', applicationWithUser.id);
+    
+    return NextResponse.json({ application: applicationWithUser });
+
+  } catch (error) {
     console.error('💥 Unexpected error:', error);
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error.message
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 }
