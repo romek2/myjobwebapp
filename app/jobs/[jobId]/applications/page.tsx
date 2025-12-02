@@ -53,6 +53,118 @@ interface Job {
   posted_at: string;
 }
 
+// SEPARATE COMPONENT FOR APPLICATION CARD
+function ApplicationCard({ application, jobId, onViewDetails }: { 
+  application: Application; 
+  jobId: string;
+  onViewDetails: () => void;
+}) {
+ 
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      'applied': 'bg-blue-100 text-blue-800',
+      'under_review': 'bg-yellow-100 text-yellow-800',
+      'interview': 'bg-purple-100 text-purple-800',
+      'offer': 'bg-green-100 text-green-800',
+      'hired': 'bg-green-100 text-green-800',
+      'rejected': 'bg-red-100 text-red-800',
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  return (
+    <div 
+      className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+      onClick={onViewDetails}
+    >
+      <div className="flex justify-between items-start">
+        <div className="flex-1">
+          {/* Name and Status */}
+          <div className="flex items-center gap-3 mb-2">
+            <h3 className="font-semibold text-lg">{application.user.name}</h3>
+            <span className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${getStatusColor(application.status)}`}>
+              
+              {application.status.replace('_', ' ').toUpperCase()}
+            </span>
+          </div>
+
+          {/* Contact Info Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm text-gray-600 mb-3">
+            {/* Email */}
+            <div className="flex items-center">
+              <Mail className="h-4 w-4 mr-2" />
+              <span>{application.user.email}</span>
+            </div>
+            
+            {/* Phone (conditional) */}
+            {application.phone ? (
+              <div className="flex items-center">
+                <Phone className="h-4 w-4 mr-2" />
+                <span>{application.phone}</span>
+              </div>
+            ) : null}
+            
+            {/* Applied Date */}
+            <div className="flex items-center">
+              <Calendar className="h-4 w-4 mr-2" />
+              <span>Applied {new Date(application.applied_at).toLocaleDateString()}</span>
+            </div>
+            
+            {/* Salary (conditional) */}
+            {application.desired_salary ? (
+              <div className="flex items-center">
+                <DollarSign className="h-4 w-4 mr-2" />
+                <span>${application.desired_salary.toLocaleString()}</span>
+              </div>
+            ) : null}
+            
+           
+            
+           
+          </div>
+
+          {/* Cover Letter Preview (conditional) */}
+          {application.cover_letter ? (
+            <p className="text-sm text-gray-700 line-clamp-2">
+              {application.cover_letter}
+            </p>
+          ) : null}
+        </div>
+
+        {/* View Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewDetails();
+          }}
+        >
+          <Eye className="h-4 w-4 mr-2" />
+          <span>View Details</span>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// SEPARATE COMPONENT FOR EMPTY STATE
+function EmptyApplicationsState({ searchTerm, statusFilter }: { searchTerm: string; statusFilter: string }) {
+  const hasFilters = searchTerm !== '' || statusFilter !== 'all';
+  
+  return (
+    <div className="text-center py-12">
+      <User className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+      <h3 className="text-lg font-medium mb-2">No applications found</h3>
+      <p className="text-gray-600">
+        {hasFilters ? 'No applications match your filters.' : 'No one has applied to this job yet.'}
+      </p>
+    </div>
+  );
+}
+
+// MAIN PAGE COMPONENT
 export default function JobApplicationsPage() {
   const params = useParams();
   const router = useRouter();
@@ -100,30 +212,11 @@ export default function JobApplicationsPage() {
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'applied': return <Clock className="h-4 w-4 text-blue-500" />;
-      case 'under_review': return <RefreshCw className="h-4 w-4 text-yellow-500" />;
-      case 'interview': return <Calendar className="h-4 w-4 text-purple-500" />;
-      case 'offer': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'hired': return <UserCheck className="h-4 w-4 text-green-600" />;
-      case 'rejected': return <XCircle className="h-4 w-4 text-red-500" />;
-      default: return <Clock className="h-4 w-4 text-gray-500" />;
-    }
+  const handleViewDetails = (applicationId: string) => {
+    router.push(`/jobs/${jobId}/applications/${applicationId}`);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'applied': return 'bg-blue-100 text-blue-800';
-      case 'under_review': return 'bg-yellow-100 text-yellow-800';
-      case 'interview': return 'bg-purple-100 text-purple-800';
-      case 'offer': return 'bg-green-100 text-green-800';
-      case 'hired': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
+  // Filter applications
   const filteredApplications = applications.filter(app => {
     const matchesSearch = searchTerm === '' ||
       app.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -134,6 +227,7 @@ export default function JobApplicationsPage() {
     return matchesSearch && matchesStatus;
   });
 
+  // Calculate status counts
   const statusCounts = {
     all: applications.length,
     applied: applications.filter(a => a.status === 'applied').length,
@@ -144,7 +238,7 @@ export default function JobApplicationsPage() {
     rejected: applications.filter(a => a.status === 'rejected').length,
   };
 
-  // Loading state
+  // Render loading state
   if (status === 'loading' || isLoading) {
     return (
       <div className="max-w-7xl mx-auto p-6">
@@ -155,7 +249,7 @@ export default function JobApplicationsPage() {
     );
   }
 
-  // Error state
+  // Render error state
   if (error) {
     return (
       <div className="max-w-4xl mx-auto p-6">
@@ -173,15 +267,12 @@ export default function JobApplicationsPage() {
     );
   }
 
-  // Main content
+  // Render main content
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button
-          variant="outline"
-          onClick={() => router.push('/admin/jobs/create')}
-        >
+        <Button variant="outline" onClick={() => router.push('/admin/jobs/create')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
@@ -195,7 +286,6 @@ export default function JobApplicationsPage() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
         <Card className="cursor-pointer hover:bg-gray-50" onClick={() => setStatusFilter('all')}>
           <CardContent className="p-4">
@@ -275,7 +365,34 @@ export default function JobApplicationsPage() {
       </Card>
 
       {/* Applications List */}
-      
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            Applications ({filteredApplications.length})
+            {statusFilter !== 'all' && ` - ${statusFilter.replace('_', ' ')}`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {filteredApplications.length === 0 && (
+            <EmptyApplicationsState searchTerm={searchTerm} statusFilter={statusFilter} />
+          )}
+          
+          {filteredApplications.length > 0 && (
+            <div className="space-y-4">
+              {filteredApplications.map((application) => {
+                return (
+                  <ApplicationCard
+                    key={application.id}
+                    application={application}
+                    jobId={jobId}
+                    onViewDetails={() => handleViewDetails(application.id)}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
