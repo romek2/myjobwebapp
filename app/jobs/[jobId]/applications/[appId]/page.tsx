@@ -1,0 +1,532 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Building, 
+  User, 
+  Mail, 
+  Phone, 
+  Calendar, 
+  DollarSign, 
+  ExternalLink,
+  CheckCircle,
+  Clock,
+  XCircle,
+  UserCheck,
+  MessageSquare,
+  RefreshCw,
+  AlertCircle,
+  ArrowLeft
+} from 'lucide-react';
+
+interface ApplicationData {
+  id: string;
+  user_id: string;
+  job_id: number;
+  job_title: string;
+  company: string;
+  status: string;
+  applied_at: string;
+  cover_letter?: string;
+  resume_file_url?: string;
+  desired_salary?: number;
+  available_start_date?: string;
+  linkedin_url?: string;
+  portfolio_url?: string;
+  phone?: string;
+  company_notes?: string;
+  interview_date?: string;
+  interviewer_name?: string;
+  interview_location?: string;
+  user: {
+    name: string;
+    email: string;
+  };
+}
+
+export default function ApplicationDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const jobId = params?.jobId as string;
+  const appId = params?.appId as string;
+  
+  const [application, setApplication] = useState<ApplicationData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
+  
+  // Form state
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [companyNotes, setCompanyNotes] = useState('');
+  const [interviewDate, setInterviewDate] = useState('');
+  const [interviewer, setInterviewer] = useState('');
+  const [location, setLocation] = useState('');
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/api/auth/signin');
+      return;
+    }
+
+    if (status === 'authenticated') {
+      loadApplication();
+    }
+  }, [status, jobId, appId, router]);
+
+  const loadApplication = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const response = await fetch(`/api/jobs/${jobId}/applications/${appId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to load application');
+      }
+      
+      const data = await response.json();
+      setApplication(data.application);
+      setSelectedStatus(data.application.status);
+      setCompanyNotes(data.application.company_notes || '');
+      setInterviewDate(data.application.interview_date || '');
+      setInterviewer(data.application.interviewer_name || '');
+      setLocation(data.application.interview_location || '');
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load application';
+      setError(errorMessage);
+      console.error('Error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStatusUpdate = async () => {
+    if (!application) return;
+    
+    try {
+      setIsUpdating(true);
+      setError(null);
+      
+      const response = await fetch(`/api/jobs/${jobId}/applications/${appId}/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: selectedStatus,
+          companyNotes,
+          interviewDate: interviewDate || null,
+          interviewer: interviewer || null,
+          location: location || null
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update application');
+      }
+
+      const result = await response.json();
+      
+      // Update local state
+      setApplication(prev => prev ? {
+        ...prev,
+        status: selectedStatus,
+        company_notes: companyNotes,
+        interview_date: interviewDate || prev.interview_date,
+        interviewer_name: interviewer || prev.interviewer_name,
+        interview_location: location || prev.interview_location,
+      } : null);
+      
+      setUpdateSuccess(true);
+      setTimeout(() => setUpdateSuccess(false), 5000);
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update application';
+      setError(errorMessage);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      'applied': 'bg-blue-100 text-blue-800',
+      'under_review': 'bg-yellow-100 text-yellow-800',
+      'interview': 'bg-purple-100 text-purple-800',
+      'offer': 'bg-green-100 text-green-800',
+      'hired': 'bg-green-100 text-green-800',
+      'rejected': 'bg-red-100 text-red-800',
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return dateString;
+    }
+  };
+
+  if (status === 'loading' || isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8 text-center">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-500" />
+            <p className="text-gray-600">Loading application...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+            <h2 className="text-xl font-semibold mb-2">Error</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button onClick={() => router.back()} variant="outline" className="w-full">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Go Back
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!application) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-500" />
+            <h2 className="text-xl font-semibold mb-2">Application Not Found</h2>
+            <p className="text-gray-600">Unable to load application data.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto p-4 space-y-6">
+        
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/jobs/${jobId}/applications`)}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Applications
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-gray-900">Application Details</h1>
+            <p className="text-gray-600">{application.job_title} at {application.company}</p>
+          </div>
+        </div>
+
+        {/* Success Message */}
+        {updateSuccess && (
+          <Alert className="bg-green-50 border-green-200 text-green-800">
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>
+              Application updated successfully! The candidate has been notified.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* Left Column - Application Details */}
+          <div className="space-y-6">
+            
+            {/* Candidate Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Candidate Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-lg">{application.user.name}</h3>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-sm text-gray-500">Status:</span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${getStatusColor(application.status)}`}>
+                      (application.status)
+                      {application.status.replace('_', ' ').toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-gray-500" />
+                    <div>
+                      <a href={`mailto:${application.user.email}`} className="font-medium text-blue-600 hover:underline">
+                        {application.user.email}
+                      </a>
+                      <p className="text-sm text-gray-500">Email</p>
+                    </div>
+                  </div>
+                  
+                  {application.phone && (
+                    <div className="flex items-center gap-3">
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <p className="font-medium">{application.phone}</p>
+                        <p className="text-sm text-gray-500">Phone</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <div>
+                      <p className="font-medium">{formatDate(application.applied_at)}</p>
+                      <p className="text-sm text-gray-500">Applied</p>
+                    </div>
+                  </div>
+                  
+                  {application.desired_salary && (
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <p className="font-medium">${application.desired_salary.toLocaleString()}</p>
+                        <p className="text-sm text-gray-500">Desired Salary</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {application.available_start_date && (
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <p className="font-medium">{formatDate(application.available_start_date)}</p>
+                        <p className="text-sm text-gray-500">Available Start</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* External Links */}
+                <div className="flex flex-wrap gap-3 pt-2">
+                  {application.linkedin_url && (
+                    <a 
+                      href={application.linkedin_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      LinkedIn
+                    </a>
+                  )}
+                  
+                  {application.portfolio_url && (
+                    <a 
+                      href={application.portfolio_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Portfolio
+                    </a>
+                  )}
+                  
+                  {application.resume_file_url && (
+                    <a 
+                      href={application.resume_file_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Resume
+                    </a>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Cover Letter */}
+            {application.cover_letter && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    Cover Letter
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                      {application.cover_letter}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Right Column - Status Management */}
+          <div className="space-y-6">
+            
+            {/* Status Update Form */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Update Application Status</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                
+                {/* Status Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Application Status
+                  </label>
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="applied">Applied</option>
+                    <option value="under_review">Under Review</option>
+                    <option value="interview">Interview Scheduled</option>
+                    <option value="offer">Offer Extended</option>
+                    <option value="hired">Hired</option>
+                    <option value="rejected">Not Selected</option>
+                  </select>
+                </div>
+
+                {/* Interview Details */}
+                {selectedStatus === 'interview' && (
+                  <div className="space-y-3 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <h4 className="font-medium text-purple-800">Interview Details</h4>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Interview Date & Time
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={interviewDate}
+                        onChange={(e) => setInterviewDate(e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Interviewer Name
+                      </label>
+                      <input
+                        type="text"
+                        value={interviewer}
+                        onChange={(e) => setInterviewer(e.target.value)}
+                        placeholder="e.g., Sarah Johnson, Hiring Manager"
+                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Location / Meeting Link
+                      </label>
+                      <input
+                        type="text"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        placeholder="e.g., Zoom link or office address"
+                        className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Company Notes */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Message to Candidate
+                  </label>
+                  <textarea
+                    value={companyNotes}
+                    onChange={(e) => setCompanyNotes(e.target.value)}
+                    placeholder="Add a personal message for the candidate (optional)..."
+                    rows={4}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    This message will be included in the notification email to the candidate.
+                  </p>
+                </div>
+
+                {/* Update Button */}
+                <Button
+                  onClick={handleStatusUpdate}
+                  disabled={isUpdating}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {isUpdating ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    'Update & Notify Candidate'
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Application Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Application Info</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Application ID:</span>
+                  <span className="font-mono">{application.id.substring(0, 8)}...</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Submitted:</span>
+                  <span>{new Date(application.applied_at).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Job ID:</span>
+                  <span className="font-mono">{jobId}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
