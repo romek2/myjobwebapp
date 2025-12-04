@@ -9,7 +9,7 @@ import Footer from '@/components/ui/footer';
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Job Matcher',
+  title: 'Workr',
   description: 'Match with job postings',
    icons: {
     icon: '/favicon.ico',
