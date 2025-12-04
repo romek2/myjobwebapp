@@ -35,12 +35,7 @@ const Navbar = () => {
           {/* Logo Section with Animation */}
           <div className="flex items-center group">
             <Link href="/" className="flex items-center space-x-2 ">
-              <div className="relative">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300">
-                  <img src="/favicon.ico" alt="Workr" className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full animate-pulse"></div>
-              </div>
+            
               <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Workr
               </span>
